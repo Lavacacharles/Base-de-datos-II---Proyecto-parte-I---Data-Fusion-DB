@@ -30,7 +30,7 @@ const int Default_D = 32;
 // sizes. Use separators to know.
 // - Regarding key, assume it's first?
 
-template <typename TK, typename TV> class ExtendibleHashingFile {
+template <typename TK> class ExtendibleHashingFile {
 private:
   string index_name;
   string data_name;
@@ -39,6 +39,98 @@ private:
   // in place of reading the file each time
   int factor;
   int depth;
+  // helper functions
+  void create_bucket(string code, int ld, string records) {
+    ofstream file(this->data_name, ios::app | ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+    Bucket<this->bucketdepth, this->get_record_size(), this->factor> bucket(
+        code, 0, ld, -1, records);
+
+    file.write((char *)&bucket,
+               sizeof(Bucket<this->bucketdepth, this->get_record_size(),
+                             this->factor>)); // guardar en formato binario
+    file.close();
+    // test
+    // TODO
+  }
+  int get_header_name_size() {
+    ifstream file(header_name, ios::in | ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    int tmp;
+    file.read((char *)&tmp, sizeof(int));
+    return tmp;
+  }
+  int get_field_size(int pos) {
+    ifstream file(header_name, ios::in | ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    int tmp;
+    file.seekg(sizeof(int) + pos * (get_header_name_size() + sizeof(int)) +
+                   get_header_name_size(),
+               ios::beg); // fixed length record
+    file.read((char *)&tmp, sizeof(int));
+    return tmp;
+  }
+
+  void overwrite_pointer(int code, int new_pointer) {
+    // TODO
+  }
+
+  // Helper function to obtain the pointer associated to a position
+  int get_index_pointer(int pos) {
+    ifstream file(index_name, ios::in | ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    int tmp;
+    file.seekg(sizeof(int) * 2 + pos * sizeof(int),
+               ios::beg); // fixed length record
+    file.read((char *)&tmp, sizeof(int));
+    return tmp;
+  }
+
+  int get_pointer_key(TK key) {
+    string binary_code = hash_func(key);
+    int left = 0, right = pow(2, this->depth);
+    for (auto iter = binary_code.begin(); iter != binary_code.end(); iter++) {
+      int mid = left + (right - left) / 2;
+      if (*iter == '0') {
+        right = mid;
+      } else {
+        left = mid;
+      }
+    }
+  }
+
+  int get_number_fields() {
+    ifstream file(this->header_name, ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    file.seekg(0, ios::end);         // ubicar cursos al final del archivo
+    long total_bytes = file.tellg(); // cantidad de bytes del archivo
+    total_bytes -= sizeof(int);
+    file.close();
+    return total_bytes / (get_header_name_size() + sizeof(int));
+  }
+
+  int get_record_size() {
+    int total = 0;
+    for (int i = 0; i < get_number_fields(); i++) {
+      total += get_field_size(i);
+    }
+    return total;
+  }
+  string hash_func(TK key) { return bitset<this->depth>(key).to_string(); }
+
+  // Helper function to obtain bucket size
+  // Bucket get_bucket(int pos) {
+  //   // TODO
+  // }
 
 public:
   ExtendibleHashingFile(string file_name, int f, int d) {
@@ -167,75 +259,6 @@ public:
       }
       this->insert(record);
     }
-  }
-
-  // helper functions
-  void create_bucket(string code, int ld, string records) {
-    ofstream file(this->data_name, ios::app | ios::binary);
-    if (!file.is_open())
-      throw("No se pudo abrir el archivo");
-    Bucket bucket(code, 0, ld, -1, records);
-
-    file.write((char *)&bucket,
-               sizeof(Bucket)); // guardar en formato binario
-    file.close();
-    // test
-    // TODO
-  }
-
-  TV search(TK key) {
-    // Find associated binary number
-    int pos = find_bit_pointer(key);
-
-    Bucket current = get_bucket(pos);
-    // use the factor of file in place of the variable
-    // Iterates until the current
-    do {
-      // TODO
-      // How to obtain key for records
-    } while (current.get_size() >= this->factor);
-
-    // TODO
-  }
-
-  vector<TV> range_search(TK start_key, TK end_key) {
-    vector<TV> in_range;
-    for (TK i = start_key; i < end_key; i++) {
-      in_range.push_back(this->search(i));
-    }
-    return in_range;
-  }
-
-  bool insert(TV record) {
-    // TODO
-  }
-
-  bool remove(TK key) {
-    // TODO
-  }
-
-  bool create_from_csv(string csvfile) {
-    // TODO
-  }
-
-  // helper functions
-  void overwrite_pointer(int code, int new_pointer) {
-    // TODO
-  }
-
-  int read_pointer(int code) {
-    // TODO
-  }
-
-  // Helper function to obtain the pointer associated to a bit number
-  int find_bit_pointer(TK key) {
-    string binary = bitset<this->depth>(key).to_string();
-    // TODO
-  }
-
-  // Helper function to obtain bucket size
-  Bucket get_bucket(int pos) {
-    // TODO
   }
 };
 
