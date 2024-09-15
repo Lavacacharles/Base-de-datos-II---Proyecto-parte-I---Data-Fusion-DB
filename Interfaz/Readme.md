@@ -8,10 +8,7 @@ Este proyecto proporciona una guía paso a paso para configurar un entorno de de
 
 2. **Instalar Herramientas de Compilación para C++ y Python**:
    - Asegúrate de instalar un compilador de C++ y Python en tu entorno WSL:
-     ```bash
-     sudo apt-get update
-     sudo apt-get install build-essential python3 python3-pip
-     ```
+
 
 ## Pasos de Configuración
 1. **Clonar el repositorio de pybind11**:
