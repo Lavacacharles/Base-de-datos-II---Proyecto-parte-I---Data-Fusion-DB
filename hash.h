@@ -30,8 +30,9 @@ const int Default_D = 32;
 
 template <typename TK, typename TV> class ExtendibleHashingFile {
 private:
-  string directory_name;
+  string index_name;
   string data_name;
+  string header_name;
   // The factor de bloque and profundidad global could be accesses with a field
   // in place of reading the file each time
   int factor;
@@ -39,7 +40,9 @@ private:
 
 public:
   ExtendibleHashingFile(string file_name, int f, int d) {
-    this->file_name = file_name;
+    this->index_name = file_name + "_index";
+    this->data_name = file_name + "_data";
+    this->header_name = file_name + "_header";
     this->factor = f;
     this->depth = d;
   }
@@ -86,6 +89,76 @@ public:
     // TODO
   }
 
+  bool remove(TK key) {
+    // TODO
+  }
+
+  bool create_from_csv(string csvfile) {
+    ifstream file(csvfile);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    vector<vector<string>> dataframe;
+
+    string line;
+    getline(file, line);
+    istringstream ss(line);
+    vector<string> headers;
+    int longest_header = 0;
+    for (string value; getline(ss, value, ',');) {
+      headers.push_back(value);
+      if (longest_header < value.size()) {
+        longest_header = value.size();
+      }
+    }
+    vector<int> sizes(headers.size(), 0);
+
+    // Theres is an extra character inserted after the first field. Research
+    // why. Might be like som kind of end of something
+    // 1. Read from csv file
+    for (; getline(file, line);) {
+      istringstream ss(line);
+      vector<string> row;
+      if (!dataframe.empty()) {
+        row.reserve(dataframe.front().size());
+      }
+
+      int i = 0;
+      for (string value; getline(ss, value, ',');) {
+        row.push_back(value);
+        if (sizes[i] < value.size()) {
+          sizes[i] = value.size();
+        }
+        i += 1;
+        // ss.seekg(1, ios::cur);
+      }
+      dataframe.push_back(row);
+    }
+
+    file.close();
+
+    // 2. Create headers file
+    ofstream header_file(header_name, ios::out | ios::binary | ios::trunc);
+    if (!header_file.is_open())
+      throw("No se pudo abrir el archivo");
+    header_file.write((char *)&longest_header, sizeof(int));
+    for (int i = 0; i < headers.size(); i++) {
+      header_file.write((char *)&headers[i], sizeof(char) * longest_header);
+      header_file.write((char *)&sizes[i], sizeof(int));
+    }
+
+    // 3. Create data file
+    for (auto iter = dataframe.begin(); iter != dataframe.end(); iter++) {
+      string record = "";
+      for (auto field_iter = iter->begin(); field_iter != iter->end();
+           field_iter++) {
+        record += *field_iter;
+      }
+      this->insert(record);
+    }
+  }
+
+  // helper functions
   void create_bucket(string code, int ld, string records) {
     ofstream file(this->data_name, ios::app | ios::binary);
     if (!file.is_open())
