@@ -3,9 +3,11 @@
 
 #include "bucket.h"
 #include <bitset>
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -48,44 +50,53 @@ public:
   }
 
   void create_directory() {
-    ofstream file(directory_name);
+    ofstream file(index_name);
     if (!file.is_open())
       throw("No se pudo abrir el archivo");
-    string to_add;
 
     // The headers
-    char temp[2 * sizeof(char)];
-    sprintf(temp, "%d", this->factor);
-    if (factor < 10) {
-      temp[1] = temp[0];
-      temp[0] = '0';
-    }
-    to_add += string(temp);
-    sprintf(temp, "%d", this->depth);
-    if (factor < 10) {
-      temp[1] = temp[0];
-      temp[0] = '0';
-    }
-    to_add += string(temp);
+    // First the factor
+    file.write((char *)&this->factor, sizeof(int));
+    file.write((char *)&this->depth, sizeof(int));
 
     // Puts all codes with their associated pointers
     // We start with 2 buckets
-    // TODO
-    // Check if the way of putting the ints works
     for (int i = 0; i < pow(2, this->depth); i++) {
-      string binary = bitset<this->depth>(i).to_string();
-      to_add += binary;
-      if (*(binary.end() - 1) == '0') {
-        binary = bitset<sizeof(int) * 8>(0).to_string();
+      string binary_code = hash_func(i);
+      int pos;
+      if (*(binary_code.end() - 1) == '0') {
+        pos = 0;
       } else {
-        binary = bitset<sizeof(int) * 8>(1).to_string();
+        pos = 1;
       }
-      to_add += binary;
+      // To save the binary code might not be neccessary because in the search
+      // it can be done internally because it's sorted
+      //
+      // file.write((char *)&binary_code, binary_code.size());
+      file.write((char *)&pos, sizeof(int));
     }
+  }
 
-    file.write(to_add.c_str(), to_add.length());
+  string search(TK key) {
+    // 1. Search by divide and conquer the position for the given key
+    int pos = get_pointer_key(key);
+    // 2. Get pointer of key
+    int pointer = get_index_pointer(pos);
+    // 3. Go to bucket of pointer to search for key over all the records
+    // TODO
+    // 4. If bucket has a next bucket, redo step 3
+    // TODO
+  }
 
-    // Test
+  vector<string> range_search(TK start_key, TK end_key) {
+    vector<string> in_range;
+    for (TK i = start_key; i < end_key; i++) {
+      in_range.push_back(this->search(i));
+    }
+    return in_range;
+  }
+
+  bool insert(string record) {
     // TODO
   }
 
