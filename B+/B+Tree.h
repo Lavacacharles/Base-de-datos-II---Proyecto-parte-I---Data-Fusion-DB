@@ -53,7 +53,6 @@ struct Index {
     int nRegistros;
     bool isLeaf;
     int next;
-    char keys[ORDER];
     
     Index(){
         nRegistros = 0;
@@ -66,21 +65,31 @@ struct BPlusTree{
     long pos_root;
     string filename;
     string Indexfilename;
+    vector<int> freeList;
     BPlusTree(){
         pos_root = 0;
         filename = "data.dat";
         Indexfilename = "index.dat";
-        WriteIndex(pos_root);
+        WriteRoot(pos_root);
+        freeList.push_back(sizeof(Index));
     }
     BPlusTree(string filename_, string Indexfilename_): filename(filename_), Indexfilename(Indexfilename_), pos_root(0){}
     
-    void WriteIndex(int);
+    void WriteRoot(int);
+    void WriteIndex(int, Index);
     Index ReadIndex(int);
     
-    void Search(){}
+    void WriteRecord(int, Record);
+    Record ReadRecord(int);
 
-    void InsertNonFullNode(Index, int);
+    void WriteBucket(int,Bucket);
+    Bucket ReadBucket(int);
+    Record* ReadListRecord(int,int[]);
+
+    void SplitChild(int,Index,int);
+    void InsertNonFullNode(int, Index, Record);
     void Insert(Record NuevoRegistro);
+    void Search(){}
     void Eliminate(){}
     void ReadCSV(string filename, int nelements, BPlusTree tree);
 };

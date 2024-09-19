@@ -1,8 +1,116 @@
 #include "B+Tree.h"
 
+void BPlusTree::WriteRoot(int posRoot){
+    fstream Page; Page.open(Indexfilename, ios::in | ios::out | ios::binary);
+    if(!Page.is_open()){
+        cerr << "Fallo abriendo archivo en la lectura del index " << posRoot;
+        exit(0);
+    }
+    Page.seekp(posRoot);
+    Index NuevoIndex;
+    Page.write(reinterpret_cast<char *>(&NuevoIndex), sizeof(Index));
+    Page.close();
+};
+
+void BPlusTree::AjustarFreeList(){
+    if(freeList.size() != 1){
+        freeList.pop_back();
+        return;
+    }
+    ifstream IndexPage; IndexPage.open(Indexfilename, ios::binary | ios::ate);
+    if (!IndexPage.is_open()) {
+        cerr << "Error  ajustando la free list" << endl;
+        exit(0);
+    }
+    streampos LastPos = IndexPage.tellg();
+    IndexPage.close();
+    freeList[0] = LastPos;
+}
+
+Record* BPlusTree::ReadListRecord(int nElements, int posBuckets[]){
+    Record registros[ORDER];
+    for(int i = 0; i < nElements; i++){
+        registros[i] = ReadRecord(posBuckets[i]);
+    }
+    return registros;
+};
+
+void BPlusTree::WriteBucket(int posBucket, Bucket NuevoBucket){
+    ofstream Page(filename); Page.open(filename, ios::binary | ios::in | ios::out);
+    if (!Page.is_open()) {
+        cerr << "Fallo escribiendo bucket\n";
+        exit(0);
+    }
+    Page.seekp(posBucket);
+    Page.write(reinterpret_cast<char*>(&NuevoBucket), sizeof(Bucket));
+    Page.close();
+};
+
+Bucket BPlusTree::ReadBucket(int posBucket){
+    ifstream Page(filename); Page.open(filename, ios::binary);
+
+    if (!Page.is_open()) {
+        cerr << "No se pudo abrir el archivo csv\n";
+        exit(0);
+    }
+    Bucket buffer;
+    Page.seekg(posBucket);
+    Page.read(reinterpret_cast<char*>(&buffer), sizeof(Bucket));
+    Page.close();
+
+    return buffer;
+};
+
+Record BPlusTree::ReadRecord(int posRecord){
+    ifstream Page(filename); Page.open(filename, ios::binary);
+
+    if (!Page.is_open()) {
+        cerr << "No se pudo abrir el archivo csv\n";
+        exit(0);
+    }
+    Record registro;
+    Page.seekg(posRecord);
+    Page.read(reinterpret_cast<char*>(&registro), sizeof(Record));
+    Page.close();
+
+    return registro;
+};
+
+void BPlusTree::WriteRecord(int posNuevoRecord, Record NuevoRecord){
+    fstream Page; Page.open(filename, ios::in | ios::out | ios::binary);
+    if(!Page.is_open()){
+        cerr << "Fallo abriendo archivo en la escritur de record " << posNuevoRecord;
+        exit(0);
+    }
+    Page.seekp(posNuevoRecord);
+    Page.write(reinterpret_cast<char *>(&NuevoRecord), sizeof(Record));
+    Page.close();
+};
+
+void BPlusTree::WriteIndex(int posIndex, Index NuevoIndex){
+    fstream Page; Page.open(Indexfilename, ios::in | ios::out | ios::binary);
+    if(!Page.is_open()){
+        cerr << "Fallo abriendo archivo en la lectura del index " << posIndex;
+        exit(0);
+    }
+    Page.seekp(posIndex);
+    Page.write(reinterpret_cast<char *>(&NuevoIndex), sizeof(Index));
+    Page.close();
+}
+Index BPlusTree::ReadIndex(int posRecord){
+    ifstream Page; Page.open(Indexfilename, ios::binary);
+    if(!Page.is_open()){
+        cerr << "Fallo abriendo archivo en la lectura del index " << posRecord;
+        exit(0);
+    }
+    Page.seekg(posRecord);
+    Index output; Page.read(reinterpret_cast<char *>(&output), sizeof(Index));
+    Page.close();
+    return output;
+}
+
 void BPlusTree:: ReadCSV(string filename, int nelements, BPlusTree tree){
     ifstream file(filename);
-    vector<Record> records;
     string line;
 
     if (!file.is_open()) {
@@ -29,58 +137,71 @@ void BPlusTree:: ReadCSV(string filename, int nelements, BPlusTree tree){
     l = nullptr;
 
     file.close();
-}
-void BPlusTree::WriteIndex(int posIndex){
-    int posBuckets[ORDER];
-    int posHijos[ORDER + 1];
-    int nRegistros;
-    bool isLeaf;
-    int next;
-    fstream Page; Page.open(Indexfilename, ios::in | ios::out | ios::binary);
-    if(!Page.is_open()){
-        cerr << "Fallo abriendo archivo en la lectura del index " << posIndex;
-        exit(0);
+};
+
+void BPlusTree::SplitChild(int posIndex, Index node, int indexHijo) {
+    Index tempChild = ReadIndex(node.posHijos[indexHijo]);
+    Index tempHalf;
+    tempHalf.isLeaf = tempChild.isLeaf;
+    int mid = ORDER / 2;
+    for (int i = mid; i < tempChild.nRegistros; i++) {
+        tempHalf.posBuckets[i - mid] = tempChild.posBuckets[i];
     }
-    Index NuevoIndex;
-    Page.seekp(posIndex);
-    Page.write(reinterpret_cast<char *>(&NuevoIndex), sizeof(Index));
-    Page.close();
-}
-Index BPlusTree::ReadIndex(int posRecord){
-    ifstream Page; Page.open(Indexfilename, ios::binary);
-    if(!Page.is_open()){
-        cerr << "Fallo abriendo archivo en la lectura del index " << posRecord;
-        exit(0);
+
+    if (!tempChild.isLeaf) {
+        for (int i = mid; i < tempChild.nRegistros + 1; i++) {
+            tempHalf.posHijos[i - mid] = tempChild.posHijos[i];
+        }
     }
-    Page.seekg(posRecord);
-    Index output; Page.read(reinterpret_cast<char *>(&output), sizeof(Index));
-    Page.close();
-    return output;
-}
+    for(int k = mid; k < ORDER; k++){
+        tempChild.posBuckets[k] = -1;
+    }
+    for(int k = mid + 1; k < ORDER + 1; k++){
+        tempChild.posHijos[k] = -1;
+    }
+
+    node.posBuckets[indexHijo] = tempChild.posBuckets[mid];
+    int posTempHalf = freeList[freeList.size() - 1];
+    node.posHijos[indexHijo + 1] = posTempHalf;
+    WriteIndex(posIndex, node);
+    WriteIndex(node.posHijos[indexHijo], tempChild);
+    WriteIndex(posTempHalf, tempHalf);
+    AjustarFreeList();
+};
 
 
-void BPlusTree::InsertNonFullNode(Index node, int value) {
+void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro) {
     int i = node.nRegistros - 1;
+    string value = string(NuevoRegistro.data[KEY_INDEX]);
+    
     if (node.isLeaf) {
-        while (i >= 0 && value < node->keys[i]) {
-            node->keys[i + 1] = node->keys[i];
+        Bucket keys = ReadBucket(node.posBuckets[0]);
+        while (i >= 0 && value < string(keys.registros[i].data[KEY_INDEX])) {
+            keys.registros[i + 1] = keys.registros[i];
+            node.posBuckets[i + 1] = node.posBuckets[i] + sizeof(Record); 
             i--;
         }
-        node->keys[i + 1] = value;
+        node.posBuckets[i + 1] = node.posBuckets[i] + sizeof(Record);
+        keys.registros[i + 1] = NuevoRegistro;
+        WriteIndex(posNode, node);
+        WriteBucket(node.posBuckets[0], keys);
     } else {
-        while (i >= 0 && value < node->keys[i]) {
+        Record *keys = ReadListRecord(node.nRegistros, node.posBuckets);
+        while (i >= 0 && value < string(keys[i].data[KEY_INDEX])) {
             i--;
         }
         i++;
-        if (node->children[i]->keys.size() == node->M) {
-            splitChild(node, i);
-            if (value > node->keys[i]) {
+        Index hijoIndex = ReadIndex(node.posHijos[i]);
+        int posHijoIndex = node.posHijos[i];
+        if (hijoIndex.nRegistros == ORDER) {
+            SplitChild(posNode, node, i);
+            if (value > keys[i].data[KEY_INDEX]) {
                 i++;
             }
         }
-        insertNonFullNode(node->children[i], value);
+        InsertNonFullNode(posHijoIndex, hijoIndex, NuevoRegistro);
     }
-}
+};
 
 void BPlusTree::Insert(Record NuevoRegistro) {
     Index node = ReadIndex(pos_root);
@@ -93,7 +214,7 @@ void BPlusTree::Insert(Record NuevoRegistro) {
     } else {
         // insertNonFullNode(node, value);
     }
-}
+};
 
 
 void CrearArchivo(string filename, string Indexfilename){
