@@ -89,6 +89,8 @@ struct BPlusTree{
     Record* ReadListRecord(int,int[]);
 
     void SplitChild(int,Index,int);
+    pair<int,Index> SplitRoot(int,Index);
+    
     void InsertNonFullNode(int, Index, Record);
     void Insert(Record NuevoRegistro);
     void Search(){}

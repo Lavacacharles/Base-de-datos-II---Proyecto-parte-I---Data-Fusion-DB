@@ -203,16 +203,29 @@ void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro)
     }
 };
 
+pair<int,Index> BPlusTree::SplitRoot(int posNode, Index node) {
+    Index temp;
+    temp.isLeaf = false;
+    temp.posHijos[temp.nRegistros] = posNode;
+    node = temp;
+    int posTemp = freeList[freeList.size() - 1];
+    WriteIndex(posTemp, temp);
+    AjustarFreeList();
+    SplitChild(posTemp, temp, 0);
+    return {posTemp, temp};
+}
 void BPlusTree::Insert(Record NuevoRegistro) {
     Index node = ReadIndex(pos_root);
     string value = string(NuevoRegistro.data[KEY_INDEX]);
 
     if (ORDER == node.nRegistros) {
 
-        // Node* temp = splitRoot(root);
-        // insertNonFullNode(temp, value);
+        Index temp; int posTemp;
+        pair<int, Index> InfoTemp = SplitRoot(0, node);
+        posTemp = InfoTemp.first; temp = InfoTemp.second;
+        InsertNonFullNode(posTemp, temp, NuevoRegistro);
     } else {
-        // insertNonFullNode(node, value);
+        InsertNonFullNode(0, node, NuevoRegistro);
     }
 };
 
