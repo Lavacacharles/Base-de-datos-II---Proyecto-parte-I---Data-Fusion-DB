@@ -31,17 +31,13 @@ class MiSGDB(QWidget):
         area_texto.setText(
             "insert into table Order from file('C:\\data.csv')\nusing index hash;\n\nselect * from Order;")
         print(area_texto)
+        
         # Botón Ejecutar
-
         ejecutar = QPushButton('Ejecutar')
+        
 
-        # Función para obtener y mostrar el texto en consola
-        def ejecutar_comando():
-            texto = area_texto.toPlainText()
-            print("Texto en el área de texto:", texto)
-
-        # Conectar el botón a la función ejecutar_comando
-        ejecutar.clicked.connect(ejecutar_comando)
+            
+        
         # Añadir al layout superior
 
         layout_superior.addLayout(panel_lateral)
@@ -68,10 +64,14 @@ class MiSGDB(QWidget):
         # Crear tabla con el tamaño adecuado
         num_rows = len(records)
         num_columns = len(headers_vector)  
-        result_table = QTableWidget(num_rows, num_columns)
+
+        # Atributos para el cambio
+        # Table
+        self.result_table = QTableWidget(num_rows, num_columns)
 
         # Añadir encabezados
-        result_table.setHorizontalHeaderLabels(headers_vector)
+        self.result_table.setHorizontalHeaderLabels(headers_vector)
+
         
         def get_Lista_From_Char_Vector(record): 
             #Retorna los atributos en una lista
@@ -89,9 +89,39 @@ class MiSGDB(QWidget):
             recordAtributos = get_Lista_From_Char_Vector(record)
             for i in range(len(recordAtributos)): # Estamos en el record
                 # print(get_Lista_From_Char_Vector(record)[i])
-                result_table.setItem(row, i, QTableWidgetItem(str(recordAtributos[i])))
+                self.result_table.setItem(row, i, QTableWidgetItem(str(recordAtributos[i])))
 
-        result_layout.addWidget(result_table)
+        # Opciones para ejecutar
+        def ejecutar_comando():
+            texto = area_texto.toPlainText() # Inserta lo que debe hacer 
+            match texto:
+                case "select * from":
+                    records = FixedFILE.readAll() 
+                    self.result_table.clearContents()
+                    num_rows = len(records)
+                    self.result_table.setRowCount(num_rows)
+                    for row, record in enumerate(records):
+                        recordAtributos = get_Lista_From_Char_Vector(record)
+                        for i in range(len(recordAtributos)):
+                            self.result_table.setItem(row, i, QTableWidgetItem(str(recordAtributos[i])))
+
+                case "select ONE":
+                    record = FixedFILE.readAll()[0]
+                    self.result_table.clearContents()
+                    self.result_table.setRowCount(1)
+                    recordAtributos = get_Lista_From_Char_Vector(record)
+                    for i in range(len(recordAtributos)):
+                            self.result_table.setItem(0, i, QTableWidgetItem(str(recordAtributos[i])))
+
+                    
+
+
+            print("Texto en el área de texto:", texto)
+
+        # Conectar el botón a la función ejecutar_comando
+        ejecutar.clicked.connect(ejecutar_comando)
+
+        result_layout.addWidget(self.result_table)
         result_tab.setLayout(result_layout)
 
         # Añadir las pestañas
