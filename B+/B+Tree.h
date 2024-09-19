@@ -75,6 +75,8 @@ struct BPlusTree{
     }
     BPlusTree(string filename_, string Indexfilename_): filename(filename_), Indexfilename(Indexfilename_), pos_root(0){}
     
+    void AjustarFreeList();
+
     void WriteRoot(int);
     void WriteIndex(int, Index);
     Index ReadIndex(int);
