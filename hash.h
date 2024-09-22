@@ -24,11 +24,9 @@ const int Default_D = 32;
 
 // Problems:
 // TODO
-// - Save number of elements in header of bucket?
-// - To generalize, use strings to save records inside.
-// - Changing of fields of records not possible, because we don't know their
-// sizes. Use separators to know.
 // - Regarding key, assume it's first?
+// - Parse for insertion so that data is separated with something, like a comma,
+// to give the correct size to the fields in a new string
 
 template <typename TK> class ExtendibleHashingFile {
 private:
@@ -220,7 +218,7 @@ private:
       throw("No se pudo abrir el archivo");
 
     // The headers
-    // First the factor
+    // First the factor, then the depth
     file.write((char *)&this->factor, sizeof(int));
     file.write((char *)&this->depth, sizeof(int));
 
@@ -358,6 +356,88 @@ public:
 
   bool insert(string record) {
     // TODO
+  }
+    // 1. Find bucket
+    string key = record.substr(0, this->get_field_size(0));
+    int pos_header = get_pointer_key(key);
+    int pointer = get_index_pointer(pos_header);
+    Bucket *bucket = get_bucket(pointer);
+    // 2. Check if bucket has space
+    if (bucket->get_size() < this->factor) {
+      // 2.1 If it does, just insert
+      string records = bucket->get_all_records();
+      records += separate_record(record);
+      bucket->change_records(records, this->get_record_size());
+      this->overwrite_bucket(bucket, pointer);
+    } else {
+      if (bucket->get_local() < this->depth) {
+        // 2.2 Divide elements of the bucket.
+        string records_0 = "";
+        string records_1 = "";
+
+        if (key[this->depth - bucket->get_local() - 1] == "0") {
+          records_0 += record;
+        } else {
+          records_1 += record;
+        }
+
+        for (int i = 0; i < bucket->get_size(); i++) {
+          string current_record =
+              bucket->get_record(i, this->get_record_size());
+          key = current_record.substr(0, this->get_field_size(0));
+          string binary_key = this->hash_func(key);
+          if (binary_key[this->depth - bucket->get_local() - 1] == "0") {
+            records_0 += current_record;
+          } else {
+            records_1 += current_record;
+          }
+        }
+
+        // Check what happens if it doesn't work and the amount of records keeps
+        // surpasing the factor
+        // TODO
+        this->create_bucket("1" + bucket->get_code(),
+                            records_1.size() / this->get_record_size(),
+                            bucket->get_local() + 1, -1, records_1);
+
+        // Change pointers of headers.
+        redirect_headers(this->get_number_buckets() - 1,
+                         "1" + bucket->get_code());
+        // Change current bucket to have "0"
+        bucket->change_records(records_0, this->get_record_size());
+        bucket->change_size(records_0.size() / this->get_record_size());
+        bucket->change_code("0" + bucket->get_code(), this->depth);
+        bucket->change_local(bucket->get_local() + 1);
+        // Pointer doesn't needs to be changed
+        this->overwrite_bucket(bucket, pointer);
+
+      } else {
+        // 2.3 If dividing isn't possible, change pointer of bucket to a new
+        // bucket and insert there
+        // Travel to end of chain
+        while (true) {
+          if (bucket->get_size() < this->factor) {
+            string records = bucket->get_all_records();
+            records += separate_record(record);
+            bucket->change_records(records, this->get_record_size());
+            this->overwrite_bucket(bucket, pointer);
+            break;
+          } else if (bucket->get_pointer() == -1) {
+            this->create_bucket(bucket->get_code(), 1, bucket->get_local(), -1,
+                                separate_record(record));
+            this->overwrite_bucket(bucket, this->get_number_buckets() - 1);
+            break;
+          } else {
+            int pointer = bucket->get_pointer();
+            delete bucket;
+            bucket = this->get_bucket(pointer);
+          }
+        }
+      }
+    }
+    delete bucket;
+    // TODO
+    // Test
   }
 
   bool remove(TK key) {
