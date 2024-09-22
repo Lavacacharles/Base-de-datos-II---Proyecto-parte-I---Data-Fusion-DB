@@ -1,5 +1,6 @@
 # import info
-import prueba 
+import prueba
+import compiler 
 import time
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTabWidget, QTableWidget, \
@@ -159,6 +160,10 @@ class MiSGDB(QWidget):
 
 
 if __name__ == '__main__':
+    compiler = compiler.SQLCompiler()
+    compiler.processQuery("create table example; select * from example;")
+    print(dir(compiler))
+    # compiler.processQuery("create table Customer from file \"C:\\data.csv\" using index hash(\"DNI\");")
     app = QApplication(sys.argv)
     ventana = MiSGDB()
     ventana.show()
