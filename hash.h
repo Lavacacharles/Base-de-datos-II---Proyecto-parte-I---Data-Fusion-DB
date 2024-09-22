@@ -354,10 +354,11 @@ public:
     }
     return in_range;
   }
-
   bool insert(string record) {
-    // TODO
+    return insert_parsed(this->separate_record(record));
   }
+
+  bool insert_parsed(string record) {
     // 1. Find bucket
     string key = record.substr(0, this->get_field_size(0));
     int pos_header = get_pointer_key(key);
@@ -369,6 +370,7 @@ public:
       string records = bucket->get_all_records();
       records += separate_record(record);
       bucket->change_records(records, this->get_record_size());
+      bucket->change_size(bucket->get_size() + 1);
       this->overwrite_bucket(bucket, pointer);
     } else {
       if (bucket->get_local() < this->depth) {
