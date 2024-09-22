@@ -240,17 +240,112 @@ private:
       // file.write((char *)&binary_code, binary_code.size());
       file.write((char *)&pos, sizeof(int));
     }
+    create_bucket("0", 1, "");
+    create_bucket("1", 1, "");
+  }
+
+  int get_factor() {
+    ifstream file(index_name, ios::in | ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    int tmp;
+    file.read((char *)&tmp, sizeof(int));
+    return tmp;
+  }
+
+  int get_depth() {
+    ifstream file(index_name, ios::in | ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+    file.seekg(sizeof(int),
+               ios::beg); // fixed length record
+
+    int tmp;
+    file.read((char *)&tmp, sizeof(int));
+    return tmp;
+  }
+
+  string separate_record(string record) {
+    // TODO
+    // Consider the record given is separated by commas to indicate fields.
+    // Return record but with the field size of the header size
+  }
+
+  int get_number_buckets() {
+    ifstream file(this->data_name, ios::binary);
+    if (!file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    file.seekg(0, ios::end);         // ubicar cursos al final del archivo
+    long total_bytes = file.tellg(); // cantidad de bytes del archivo
+    file.close();
+    return total_bytes / this->get_bucket_size();
+  }
+
+  void redirect_headers(int new_pointer, string code) {
+    int ld = code.size();
+    int start = stoi(code, nullptr, 2);
+    while (start < pow(2, this->depth)) {
+      this->overwrite_pointer(start, new_pointer);
+      start += pow(2, ld);
+    }
+    // TODO
+    // Test
+  }
+
+public:
+  ExtendibleHashingFile(string file_name) {
+    this->index_name = file_name + "_index";
+    this->data_name = file_name + "_data";
+    this->header_name = file_name + "_header";
+    this->factor = this->get_factor();
+    this->depth = this->get_depth();
+  }
+  ExtendibleHashingFile(string file_name, int f, int d) {
+    this->index_name = file_name + "_index";
+    this->data_name = file_name + "_data";
+    this->header_name = file_name + "_header";
+    this->factor = f;
+    this->depth = d;
+    create_directory();
   }
 
   string search(TK key) {
+    // TK is a template parameter but it is treated internally as a string.
+    // Might be better to receive a string directly
+
     // 1. Search by divide and conquer the position for the given key
     int pos = get_pointer_key(key);
     // 2. Get pointer of key
     int pointer = get_index_pointer(pos);
-    // 3. Go to bucket of pointer to search for key over all the records
+    // 3. Loop over the chain of bucket until the end is reached or the key is
+    // found
+    Bucket *bucket = get_bucket(pointer);
+    while (true) {
+      string current_key = "";
+      string record = "";
+      // 4. Go to current bucket to search for key over all the records
+      for (int i = 0; i < bucket->get_size(); i++) {
+        record = bucket->get_record(i, this->get_record_size());
+        // Remember, we are assuming that the key is the first field
+        current_key = record.substr(0, this->get_field_size(0));
+        if (current_key == key) {
+          return record;
+        }
+      }
+
+      if (bucket->get_pointer() == -1) {
+        return "Key not found";
+      } else {
+        int pointer = bucket->get_pointer();
+        delete bucket;
+        bucket = this->get_bucket(pointer);
+      }
+    }
+
     // TODO
-    // 4. If bucket has a next bucket, redo step 3
-    // TODO
+    // Test
   }
 
   vector<string> range_search(TK start_key, TK end_key) {
