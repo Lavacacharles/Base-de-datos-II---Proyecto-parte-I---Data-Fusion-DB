@@ -14,9 +14,9 @@
 using namespace std;
 
 // Factor de bloque
-const int Default_F = 4;
+const int Default_F = 3;
 // Cantidad de digitos en el hash index (Profundidad global)
-const int Default_D = 32;
+const int Default_D = 3;
 
 // structure of bucket
 // code, size, local depth, pointer, values
@@ -300,7 +300,8 @@ public:
     this->factor = this->get_factor();
     this->depth = this->get_depth();
   }
-  ExtendibleHashingFile(string file_name, int f, int d) {
+  ExtendibleHashingFile(string file_name, int f = Default_F,
+                        int d = Default_D) {
     this->index_name = file_name + "_index";
     this->data_name = file_name + "_data";
     this->header_name = file_name + "_header";
