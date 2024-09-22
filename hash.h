@@ -40,20 +40,35 @@ private:
   int factor;
   int depth;
   // helper functions
-  void create_bucket(string code, int ld, string records) {
-    ofstream file(this->data_name, ios::app | ios::binary);
-    if (!file.is_open())
+  void create_bucket(string code, int size, int ld, int pointer,
+                     string records) {
+    ofstream data_file(data_name, ios::app | ios::binary);
+    if (!data_file.is_open())
       throw("No se pudo abrir el archivo");
-    Bucket<this->bucketdepth, this->get_record_size(), this->factor> bucket(
-        code, 0, ld, -1, records);
 
-    file.write((char *)&bucket,
-               sizeof(Bucket<this->bucketdepth, this->get_record_size(),
-                             this->factor>)); // guardar en formato binario
-    file.close();
-    // test
-    // TODO
+    //  strncpy copies the values filling from left to right. If there isn't
+    //  enoug on the string to fill the char array, it's left empty. Not a
+    //  problem because we have the local depth to slice what is useful
+    char c_code[depth];
+    strncpy(c_code, code.c_str(), depth);
+    data_file.write(c_code, sizeof(char) * depth);
+
+    // inserting size
+    data_file.write((char *)&size, sizeof(int));
+
+    // Inserting local depth
+    data_file.write((char *)&ld, sizeof(int));
+
+    // Inserting pointer
+    data_file.write((char *)&pointer, sizeof(int));
+
+    // The space not used is filled with weird things after nth value of string
+    data_file.write(records.c_str(),
+                    sizeof(char) * this->get_record_size() * factor);
+
+    data_file.close();
   }
+
   int get_header_name_size() {
     ifstream file(header_name, ios::in | ios::binary);
     if (!file.is_open())
@@ -63,6 +78,41 @@ private:
     file.read((char *)&tmp, sizeof(int));
     return tmp;
   }
+
+  int get_bucket_size() {
+    return this->depth * sizeof(char) + sizeof(int) * 3 +
+           this->get_record_size() * this->factor;
+  }
+
+  void overwrite_bucket(Bucket *bucket, int pos_bucket) {
+    ofstream data_file(data_name, ios::in | ios::binary);
+    if (!data_file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    data_file.seekp(pos_bucket * this->get_bucket_size(), ios::cur);
+
+    data_file.write(bucket->get_code().c_str(), sizeof(char) * depth);
+
+    // inserting size
+    int temp = bucket->get_size();
+    data_file.write((char *)&temp, sizeof(int));
+
+    // Inserting local depth
+    temp = bucket->get_local();
+    data_file.write((char *)&temp, sizeof(int));
+
+    // Inserting pointer
+    temp = bucket->get_pointer();
+    data_file.write((char *)&temp, sizeof(int));
+
+    // // The space not used is filled with weird things after th value of
+    // string
+    data_file.write(bucket->get_all_records().c_str(),
+                    sizeof(char) * this->get_record_size() * factor);
+
+    data_file.close();
+  }
+
   int get_field_size(int pos) {
     ifstream file(header_name, ios::in | ios::binary);
     if (!file.is_open())
@@ -76,8 +126,14 @@ private:
     return tmp;
   }
 
-  void overwrite_pointer(int code, int new_pointer) {
-    // TODO
+  void overwrite_pointer(int pos, int new_pointer) {
+    ofstream index_file(index_name, ios::out | ios::binary);
+    if (!index_file.is_open())
+      throw("No se pudo abrir el archivo");
+
+    index_file.seekp(sizeof(int) * 2 + pos * sizeof(int),
+                     ios::beg); // fixed length record
+    index_file.write((char *)&new_pointer, sizeof(int));
   }
 
   // Helper function to obtain the pointer associated to a position
@@ -104,6 +160,7 @@ private:
         left = mid;
       }
     }
+    return left;
   }
 
   int get_number_fields() {
@@ -128,17 +185,33 @@ private:
   string hash_func(TK key) { return bitset<this->depth>(key).to_string(); }
 
   // Helper function to obtain bucket size
-  // Bucket get_bucket(int pos) {
-  //   // TODO
-  // }
+  Bucket *get_bucket(int pos) {
+    ifstream data_file(this->data_name, ios::binary);
+    if (!data_file.is_open())
+      throw("No se pudo abrir el archivo");
 
-public:
-  ExtendibleHashingFile(string file_name, int f, int d) {
-    this->index_name = file_name + "_index";
-    this->data_name = file_name + "_data";
-    this->header_name = file_name + "_header";
-    this->factor = f;
-    this->depth = d;
+    data_file.seekg(pos * get_bucket_size());
+
+    char *c_code = new char[depth];
+    data_file.read(c_code, sizeof(char) * depth);
+
+    int size_bucket;
+    data_file.read((char *)&size_bucket, sizeof(int));
+
+    int local_depth;
+    data_file.read((char *)&local_depth, sizeof(int));
+
+    int pointer;
+    data_file.read((char *)&pointer, sizeof(int));
+
+    char *records = new char[this->record_size * this->factor];
+    data_file.read(records, sizeof(char) * this->record_size * this->factor);
+
+    Bucket *bucket =
+        new Bucket(c_code, size_bucket, local_depth, pointer, records);
+
+    data_file.close();
+    return bucket;
   }
 
   void create_directory() {
