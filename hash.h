@@ -2,7 +2,6 @@
 #define HASH_H_
 
 #include "bucket.h"
-#include <bitset>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -24,11 +23,13 @@ const int Default_D = 3;
 
 // Problems:
 // TODO
-// - Regarding key, assume it's first?
 // - Parse for insertion so that data is separated with something, like a comma,
 // to give the correct size to the fields in a new string
 
-template <typename TK> class ExtendibleHashingFile {
+// The key needs to be a int because of the hashing function. Before bitset was
+// used and it works with string, but it needs a constant as limit. External
+// package booster can be used to fix this, but is not implemetned
+class ExtendibleHashingFile {
 private:
   string index_name;
   string data_name;
@@ -37,6 +38,7 @@ private:
   // in place of reading the file each time
   int factor;
   int depth;
+  int record_size;
   // helper functions
   void create_bucket(string code, int size, int ld, int pointer,
                      string records) {
@@ -47,18 +49,19 @@ private:
     //  strncpy copies the values filling from left to right. If there isn't
     //  enoug on the string to fill the char array, it's left empty. Not a
     //  problem because we have the local depth to slice what is useful
-    char c_code[depth];
-    strncpy(c_code, code.c_str(), depth);
-    data_file.write(c_code, sizeof(char) * depth);
+    // char c_code[depth];
+    // strncpy(c_code, code.c_str(), depth);
+    // data_file.write(c_code, sizeof(char) * depth);
+    data_file.write(code.c_str(), sizeof(char) * depth);
 
     // inserting size
-    data_file.write((char *)&size, sizeof(int));
+    data_file.write(reinterpret_cast<const char *>(&size), sizeof(int));
 
     // Inserting local depth
-    data_file.write((char *)&ld, sizeof(int));
+    data_file.write(reinterpret_cast<const char *>(&ld), sizeof(int));
 
     // Inserting pointer
-    data_file.write((char *)&pointer, sizeof(int));
+    data_file.write(reinterpret_cast<const char *>(&pointer), sizeof(int));
 
     // The space not used is filled with weird things after nth value of string
     data_file.write(records.c_str(),
@@ -73,7 +76,7 @@ private:
       throw("No se pudo abrir el archivo");
 
     int tmp;
-    file.read((char *)&tmp, sizeof(int));
+    file.read(reinterpret_cast<char *>(&tmp), sizeof(int));
     return tmp;
   }
 
@@ -92,16 +95,16 @@ private:
     data_file.write(bucket->get_code().c_str(), sizeof(char) * depth);
 
     // inserting size
-    int temp = bucket->get_size();
-    data_file.write((char *)&temp, sizeof(int));
+    int size = bucket->get_size();
+    data_file.write(reinterpret_cast<const char *>(&size), sizeof(int));
 
     // Inserting local depth
-    temp = bucket->get_local();
-    data_file.write((char *)&temp, sizeof(int));
+    int ld = bucket->get_local();
+    data_file.write(reinterpret_cast<const char *>(&ld), sizeof(int));
 
     // Inserting pointer
-    temp = bucket->get_pointer();
-    data_file.write((char *)&temp, sizeof(int));
+    int pointer = bucket->get_pointer();
+    data_file.write(reinterpret_cast<const char *>(&pointer), sizeof(int));
 
     // // The space not used is filled with weird things after th value of
     // string
@@ -117,15 +120,17 @@ private:
       throw("No se pudo abrir el archivo");
 
     int tmp;
-    file.seekg(sizeof(int) + pos * (get_header_name_size() + sizeof(int)) +
-                   get_header_name_size(),
+    int header_name_size = get_header_name_size();
+    file.seekg(sizeof(int) + pos * (header_name_size + sizeof(int)) +
+                   header_name_size,
                ios::beg); // fixed length record
     file.read((char *)&tmp, sizeof(int));
+    file.close();
     return tmp;
   }
 
   void overwrite_pointer(int pos, int new_pointer) {
-    ofstream index_file(index_name, ios::out | ios::binary);
+    ofstream index_file(index_name, ios::in | ios::binary);
     if (!index_file.is_open())
       throw("No se pudo abrir el archivo");
 
@@ -147,7 +152,7 @@ private:
     return tmp;
   }
 
-  int get_pointer_key(TK key) {
+  int get_pointer_key(int key) {
     string binary_code = hash_func(key);
     int left = 0, right = pow(2, this->depth);
     for (auto iter = binary_code.begin(); iter != binary_code.end(); iter++) {
@@ -180,7 +185,13 @@ private:
     }
     return total;
   }
-  string hash_func(TK key) { return bitset<this->depth>(key).to_string(); }
+  string hash_func(int key) {
+    string binary = "";
+    for (int i = depth - 1; i >= 0; --i) {
+      binary += (key & (1 << i)) ? '1' : '0';
+    }
+    return binary;
+  }
 
   // Helper function to obtain bucket size
   Bucket *get_bucket(int pos) {
@@ -212,8 +223,8 @@ private:
     return bucket;
   }
 
-  void create_directory() {
-    ofstream file(index_name);
+  void create_index() {
+    ofstream file(index_name, ios::binary | ios::trunc);
     if (!file.is_open())
       throw("No se pudo abrir el archivo");
 
@@ -238,8 +249,6 @@ private:
       // file.write((char *)&binary_code, binary_code.size());
       file.write((char *)&pos, sizeof(int));
     }
-    create_bucket("0", 1, "");
-    create_bucket("1", 1, "");
   }
 
   int get_factor() {
@@ -265,9 +274,19 @@ private:
   }
 
   string separate_record(string record) {
-    // TODO
-    // Consider the record given is separated by commas to indicate fields.
-    // Return record but with the field size of the header size
+    istringstream ss(record);
+    string parsed_record = "";
+    int i = 0;
+    for (string value; getline(ss, value, ',');) {
+      int current_size = this->get_field_size(i);
+      if (value.size() >= current_size) {
+        parsed_record += value.substr(0, current_size);
+      } else {
+        parsed_record += value + string(current_size - value.size(), ' ');
+      }
+      i++;
+    }
+    return record;
   }
 
   int get_number_buckets() {
@@ -281,15 +300,13 @@ private:
     return total_bytes / this->get_bucket_size();
   }
 
-  void redirect_headers(int new_pointer, string code) {
+  void redirect_index(int new_pointer, string code) {
     int ld = code.size();
     int start = stoi(code, nullptr, 2);
     while (start < pow(2, this->depth)) {
       this->overwrite_pointer(start, new_pointer);
       start += pow(2, ld);
     }
-    // TODO
-    // Test
   }
 
 public:
@@ -299,18 +316,19 @@ public:
     this->header_name = file_name + "_header";
     this->factor = this->get_factor();
     this->depth = this->get_depth();
+    this->record_size = this->get_record_size();
   }
-  ExtendibleHashingFile(string file_name, int f = Default_F,
-                        int d = Default_D) {
+  ExtendibleHashingFile(string file_name, int f, int d) {
     this->index_name = file_name + "_index";
     this->data_name = file_name + "_data";
     this->header_name = file_name + "_header";
     this->factor = f;
     this->depth = d;
-    create_directory();
+    this->record_size = 0;
   }
+  virtual ~ExtendibleHashingFile() {}
 
-  string search(TK key) {
+  string search(int key) {
     // TK is a template parameter but it is treated internally as a string.
     // Might be better to receive a string directly
 
@@ -329,7 +347,7 @@ public:
         record = bucket->get_record(i, this->get_record_size());
         // Remember, we are assuming that the key is the first field
         current_key = record.substr(0, this->get_field_size(0));
-        if (current_key == key) {
+        if (stoi(current_key) == key) {
           return record;
         }
       }
@@ -342,34 +360,42 @@ public:
         bucket = this->get_bucket(pointer);
       }
     }
-
-    // TODO
-    // Test
   }
 
-  vector<string> range_search(TK start_key, TK end_key) {
+  vector<string> range_search(int start_key, int end_key) {
     vector<string> in_range;
-    for (TK i = start_key; i < end_key; i++) {
+    for (int i = start_key; i < end_key; i++) {
       in_range.push_back(this->search(i));
     }
     return in_range;
   }
+
   bool insert(string record) {
     return insert_parsed(this->separate_record(record));
   }
 
   bool insert_parsed(string record) {
     // 1. Find bucket
-    string key = record.substr(0, this->get_field_size(0));
+    // cout << "---------------------------------------------------" << endl;
+    string temp_key = record.substr(0, this->get_field_size(0));
+    int key = stoi(record.substr(0, this->get_field_size(0)));
+    // cout << "key: " << key << endl;
     int pos_header = get_pointer_key(key);
+    // cout << "pos_header: " << pos_header << endl;
     int pointer = get_index_pointer(pos_header);
+    // cout << "pointer: " << pointer << endl;
     Bucket *bucket = get_bucket(pointer);
+    // cout << bucket->get_code() << endl;
+    // cout << bucket->get_size() << endl;
+    // cout << bucket->get_local() << endl;
+    // cout << bucket->get_pointer() << endl;
+    // cout << "---------------------------------------------------" << endl;
     // 2. Check if bucket has space
     if (bucket->get_size() < this->factor) {
       // 2.1 If it does, just insert
-      string records = bucket->get_all_records();
-      records += separate_record(record);
-      bucket->change_records(records, this->get_record_size());
+      string all_records = bucket->get_all_records();
+      all_records = all_records + record;
+      bucket->change_records(all_records, this->record_size);
       bucket->change_size(bucket->get_size() + 1);
       this->overwrite_bucket(bucket, pointer);
     } else {
@@ -378,7 +404,8 @@ public:
         string records_0 = "";
         string records_1 = "";
 
-        if (key[this->depth - bucket->get_local() - 1] == "0") {
+        string binary_key = this->hash_func(key);
+        if (binary_key[this->depth - bucket->get_local() - 1] == '0') {
           records_0 += record;
         } else {
           records_1 += record;
@@ -387,9 +414,9 @@ public:
         for (int i = 0; i < bucket->get_size(); i++) {
           string current_record =
               bucket->get_record(i, this->get_record_size());
-          key = current_record.substr(0, this->get_field_size(0));
+          key = stoi(current_record.substr(0, this->get_field_size(0)));
           string binary_key = this->hash_func(key);
-          if (binary_key[this->depth - bucket->get_local() - 1] == "0") {
+          if (binary_key[this->depth - bucket->get_local() - 1] == '0') {
             records_0 += current_record;
           } else {
             records_1 += current_record;
@@ -404,8 +431,8 @@ public:
                             bucket->get_local() + 1, -1, records_1);
 
         // Change pointers of headers.
-        redirect_headers(this->get_number_buckets() - 1,
-                         "1" + bucket->get_code());
+        redirect_index(this->get_number_buckets() - 1,
+                       "1" + bucket->get_code());
         // Change current bucket to have "0"
         bucket->change_records(records_0, this->get_record_size());
         bucket->change_size(records_0.size() / this->get_record_size());
@@ -421,17 +448,19 @@ public:
         while (true) {
           if (bucket->get_size() < this->factor) {
             string records = bucket->get_all_records();
-            records += separate_record(record);
+            records += record;
+            bucket->change_size(records.size() / this->get_record_size());
             bucket->change_records(records, this->get_record_size());
             this->overwrite_bucket(bucket, pointer);
             break;
           } else if (bucket->get_pointer() == -1) {
             this->create_bucket(bucket->get_code(), 1, bucket->get_local(), -1,
-                                separate_record(record));
-            this->overwrite_bucket(bucket, this->get_number_buckets() - 1);
+                                record);
+            bucket->change_pointer(this->get_number_buckets() - 1);
+            this->overwrite_bucket(bucket, pointer);
             break;
           } else {
-            int pointer = bucket->get_pointer();
+            pointer = bucket->get_pointer();
             delete bucket;
             bucket = this->get_bucket(pointer);
           }
@@ -439,13 +468,12 @@ public:
       }
     }
     delete bucket;
-    // TODO
-    // Test
+    return true;
   }
 
-  bool remove(TK key) {
-    // TODO
-  }
+  // bool remove(TK key) {
+  //   // TODO
+  // }
 
   bool create_from_csv(string csvfile) {
     ifstream file(csvfile);
@@ -492,7 +520,8 @@ public:
     file.close();
 
     // 2. Create headers file
-    ofstream header_file(header_name, ios::out | ios::binary | ios::trunc);
+    ofstream header_file(this->header_name,
+                         ios::out | ios::binary | ios::trunc);
     if (!header_file.is_open())
       throw("No se pudo abrir el archivo");
     header_file.write((char *)&longest_header, sizeof(int));
@@ -500,16 +529,35 @@ public:
       header_file.write((char *)&headers[i], sizeof(char) * longest_header);
       header_file.write((char *)&sizes[i], sizeof(int));
     }
+    header_file.close();
 
-    // 3. Create data file
+    // 3. Create index from the fields
+    this->create_index();
+    // clean file
+    ofstream data_file(this->data_name, ios::out | ios::binary | ios::trunc);
+    data_file.close();
+    this->record_size = this->get_record_size();
+    create_bucket("0", 0, 1, -1, "");
+    create_bucket("1", 0, 1, -1, "");
+
+    // 4. Create data file
     for (auto iter = dataframe.begin(); iter != dataframe.end(); iter++) {
       string record = "";
+      int i = 0;
       for (auto field_iter = iter->begin(); field_iter != iter->end();
            field_iter++) {
-        record += *field_iter;
+
+        if ((*field_iter).size() >= sizes[i]) {
+          record += (*field_iter).substr(0, sizes[i]);
+        } else {
+          record +=
+              (*field_iter) + string(sizes[i] - (*field_iter).size(), ' ');
+        }
+        i++;
       }
-      this->insert(record);
+      this->insert_parsed(record);
     }
+    return true;
   }
 };
 
