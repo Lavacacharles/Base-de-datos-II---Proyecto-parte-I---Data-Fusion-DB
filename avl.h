@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <chrono>
 
 #define HEAD_FILE 8;
 #define BYTES_TO_NEXTDEL 0
@@ -32,6 +33,11 @@ struct Record {
         cout << this->key;
         cout << "\t" << this->nombre;
         cout << "\t" << this->apellidos;
+    }
+
+    string getData() {
+        string output = to_string(key) + "," + nombre + "," + apellidos + "," + puesto + "," + to_string(sueldo)+"\n";
+        return output;
     }
 };
 
@@ -66,6 +72,7 @@ template<class T>
 class AVLFile {
     HeadAVL head;
     string filename;
+    string result = "output.csv";
 
     int getBalance(long pos) {
         ifstream file(filename, ios::in | ios::binary);
@@ -89,6 +96,7 @@ class AVLFile {
         file.close();
         return hLeft - hRight;
     }
+
     int getHeight(long pos) {
         if(pos==-1)
             return -1;
@@ -99,6 +107,7 @@ class AVLFile {
         file.close();
         return height;
     }
+
     template<class K>
     K read(long pos) {
         K data;
@@ -109,6 +118,7 @@ class AVLFile {
         file.close();
         return data;
     }
+
     template<class M>
     void write(long pos, M data) {
         ofstream file(filename, ios::in |ios::out| ios::ate | ios::binary);
@@ -117,6 +127,7 @@ class AVLFile {
         file.flush();
         file.close();
     }
+
     long rotateRight(long pos) {
         long x ,t, rightPos;
         x = read<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT);
@@ -131,6 +142,7 @@ class AVLFile {
         write<int>(getPosFisical<T>(x)+BYTES_TO_HEIGHT, heightX);
         return x;
     };
+
     long rotateLeft(long pos){
         long y ,t, leftPos;
         leftPos = read<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT);
@@ -144,6 +156,7 @@ class AVLFile {
         write<int>(getPosFisical<T>(y)+BYTES_TO_HEIGHT, heightY);
         return y;
     };
+
     void rewriteHead() {
         ofstream file(filename, ios::in | ios::out | ios::ate | ios::binary);
         file.seekp(0, ios::beg);
@@ -151,6 +164,7 @@ class AVLFile {
         file.flush();
         file.close();
     }
+
     pair<bool, long> insert(long posRoot, Record<T> record) {
         bool isAdded = true;
         fstream file;
@@ -330,8 +344,57 @@ class AVLFile {
             rangeSearch(nodeRoot.right, keyMin, keyMax, result);
     }
 
+    void writeOutputFile(Record<T>& record, const int& duration, const bool state) {
+        ofstream outputFile;
+        outputFile.open(result,ios::out|ios::trunc);
+        if(state) {
+            outputFile<<record.getData();
+        }
+        string outputString = "Execution time: "+to_string(duration)+"ms.\n";
+        outputFile<<outputString;
+    }
+    void writeOutputFile(vector<Record<T>>& vector, const int& duration, const bool state) {
+        ofstream outputFile;
+        outputFile.open(result,ios::out|ios::trunc);
+        if(state) {
+            for(int i = 0; i < vector.size(); i++) {
+                outputFile<<vector[i].getData();
+            }
+        }
+        string outputString = "Execution time: "+to_string(duration)+"ms.\n";
+        outputFile<<outputString;
+    }
+    void writeOutputFile(const int& duration, const bool state) {
+        ofstream outputFile;
+        outputFile.open(result,ios::out|ios::trunc);
+        if(!state) {
+            string outputString = "Process failed in "+to_string(duration)+"ms.\n";
+            outputFile<<outputString;
+            return;
+        }
+        string outputString = "Execution time: "+to_string(duration)+"ms.\n";
+        outputFile<<outputString;
+    }
+
+
 public:
     AVLFile(string filename): filename(filename) {
+        fstream file(filename);
+        if (!file.good()) {
+            file.close();
+            file.open(filename, ios::out | ios::binary);
+            file.write((char*)&head, sizeof(HeadAVL));
+            file.flush();
+        }
+        else {
+            file.read((char*)&head, sizeof(HeadAVL));
+            cout<<"Root: "<<head.root<<endl;
+            cout<<"NextDel: "<<head.nextDel<<endl;
+        }
+        file.close();
+    }
+
+    AVLFile(string filename, string output): filename(filename), result(output) {
         fstream file(filename);
         if (!file.good()) {
             file.close();
@@ -367,7 +430,10 @@ public:
     }
 
     bool add(Record<T> record) {
+        auto start = chrono::high_resolution_clock::now();
         auto root = insert(head.root, record);
+        auto end = chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         if(root.first) {
             HeadAVL nodeRoot = read<HeadAVL>(0);
             if (head.root != root.second || head.nextDel != nodeRoot.nextDel) {
@@ -376,12 +442,16 @@ public:
                 rewriteHead();
             }
         }
+        writeOutputFile(duration.count(),root.first);
         cout<<(root.first?"Insercion correcta del ":"Ya existe el ")<<"registro con key("<<record.key<<")\n";
         return root.first;
     }
 
     bool remove(T key) {
+        auto start = chrono::high_resolution_clock::now();
         auto root = deleteFL(head.root, key);
+        auto end = chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         if(root.first) {
             HeadAVL nodeRoot = read<HeadAVL>(0);
             if (head.root != root.second || head.nextDel != nodeRoot.nextDel) {
@@ -390,22 +460,36 @@ public:
                 rewriteHead();
             }
         }
+        writeOutputFile(duration.count(),root.first);
         cout<<(root.first?"Eliminacion correcta del ":"No se encontro el ")<<"registro con key("<<key<<")\n";
         return root.first;
     }
 
     Record<T> search(T key) {
+        auto start = chrono::high_resolution_clock::now();
         auto result = search(head.root, key);
+        auto end = chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+        writeOutputFile(result.second,duration.count(),result.first);
         cout<<((result.first)?"Registro encontrado":"No se encontró el registro")<<"con key(" << key << "):\n";
         result.second.show();
         cout<<endl;
+
         return result.second;
     }
 
     vector<Record<T>> rangeSearch(T keyMin, T keyMax) {
         vector<Record<T>> result;
+        auto start = chrono::high_resolution_clock::now();
         rangeSearch(head.root, keyMin, keyMax, result);
-        if (!result.empty()) {
+        auto end = chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+        bool state = (!result.empty())?true:false;
+        writeOutputFile(result,duration.count(),state);
+
+        if (state) {
             cout << "Registros en el rango [" << keyMin << ", " << keyMax << "]:\n";
             for (const auto& record : result) {
                 record.show();
@@ -417,6 +501,8 @@ public:
 
         return result;
     }
+
+
 
 
 };
@@ -466,7 +552,7 @@ void test_rangeSearch(AVLFile<T> &avl) {
 /*
 int main() {
     AVLFile<int> avl("avlfile.dat");
-    /*test_insert1(avl);
+    test_insert1(avl);
     test_remove(avl);
     test_insert2(avl);
     test_insert3(avl);
