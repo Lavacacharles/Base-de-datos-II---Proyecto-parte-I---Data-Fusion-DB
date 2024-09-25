@@ -4,17 +4,21 @@
 #include <cstring>
 
 #define HEAD_FILE 8;
-
+#define BYTES_TO_NEXTDEL 0
+#define BYTES_TO_LEFT  4
+#define BYTES_TO_RIGHT  8
+#define BYTES_TO_HEIGHT  12
+#define BYTES_TO_DATA 16
 
 using namespace std;
 
 template<class T>
 struct Record {
     T key;
-    char nombre[100]{};
-    char apellidos[100]{};
-    char puesto[20]{};
-    int sueldo{};
+    char nombre[15]{};
+    char apellidos[15]{};
+    char puesto[2]{};
+    int sueldo=0;
 
     Record()= default;
     Record(T key, const string& nombre_, const string& apellidos_, const string& puesto_, int sueldo_) {
@@ -28,15 +32,8 @@ struct Record {
         cout << this->key;
         cout << "\t" << this->nombre;
         cout << "\t" << this->apellidos;
-        cout << "\t" << this->puesto;
-        cout << "\t" << this->sueldo;
     }
 };
-
-#define BYTES_TO_NEXTDEL 0
-#define BYTES_TO_LEFT  4
-#define BYTES_TO_RIGHT  8
-#define BYTES_TO_HEIGHT  12
 
 template<class T>
 struct NodeAVL {
@@ -71,7 +68,7 @@ class AVLFile {
     string filename;
 
     int getBalance(long pos) {
-        fstream file(filename, ios::in | ios::binary);
+        ifstream file(filename, ios::in | ios::binary);
         LeavesAVL leaves;
         file.seekg(getPosFisical<T>(pos)+BYTES_TO_LEFT, ios::beg);
         file.read((char*)&leaves, sizeof(LeavesAVL));
@@ -93,9 +90,9 @@ class AVLFile {
         return hLeft - hRight;
     }
     int getHeight(long pos) {
-        if(pos<-1)
+        if(pos==-1)
             return -1;
-        fstream file(filename, ios::in | ios::binary);
+        ifstream file(filename, ios::in | ios::binary);
         int height=0;
         file.seekg(getPosFisical<T>(pos)+BYTES_TO_HEIGHT, ios::beg);
         file.read((char*)&height, sizeof(int));
@@ -103,75 +100,57 @@ class AVLFile {
         return height;
     }
     template<class K>
-    K read(fstream& file, long pos) {
+    K read(long pos) {
         K data;
+        ifstream file(filename, ios::in | ios::binary);
         file.seekg(pos, ios::beg);
+        int pos_ = file.tellg();
         file.read((char*)&data, sizeof(K));
+        file.close();
         return data;
     }
     template<class M>
-    void write(fstream& file, long pos, M data) {
+    void write(long pos, M data) {
+        ofstream file(filename, ios::in |ios::out| ios::ate | ios::binary);
         file.seekp(pos, ios::beg);
         file.write((char*)&data, sizeof(M));
+        file.flush();
+        file.close();
     }
     long rotateRight(long pos) {
         long x ,t, rightPos;
-        fstream file(filename, ios::in | ios::out | ios::ate | ios::binary);
-        /*file.seekg(getPosFisical<T>(pos)+BYTES_TO_LEFT, ios::beg);
-        file.read((char*)&x, sizeof(long));
-        file.seekg(getPosFisical<T>(x)+BYTES_TO_RIGHT, ios::beg);
-        file.read((char*)&t, sizeof(long));*/
-        x = read<long>(file,getPosFisical<T>(pos)+BYTES_TO_LEFT);
-        file.read((char*)&rightPos, sizeof(long));//
-        t = read<long>(file,getPosFisical<T>(x)+BYTES_TO_RIGHT);
+        x = read<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT);
+        rightPos = read<long>(getPosFisical<T>(pos)+BYTES_TO_RIGHT);
+        t = read<long>(getPosFisical<T>(x)+BYTES_TO_RIGHT);
+        write<long>(getPosFisical<T>(x)+BYTES_TO_RIGHT,pos);
+        write<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT,t);
 
-        write(file,getPosFisical<T>(x)+BYTES_TO_RIGHT,pos);
-        write(file,getPosFisical<T>(pos)+BYTES_TO_LEFT,t);/*
-        file.seekp(getPosFisical<T>(x)+BYTES_TO_RIGHT, ios::beg);
-        file.write((char*)&pos, sizeof(long));
-        file.seekp(getPosFisical<T>(pos)+BYTES_TO_LEFT, ios::beg);
-        file.write((char*)&t, sizeof(long));*/
-
-        int height= max(getHeight(x), getHeight(rightPos))+1;
-        write(file,getPosFisical<T>(pos)+BYTES_TO_HEIGHT,height);
-        int heightX = max(getHeight(read<long>(file,getPosFisical<T>(x)+BYTES_TO_LEFT)),getHeight(read<long>(file,getPosFisical<T>(x)+BYTES_TO_RIGHT)))+1;
-        write(file, getPosFisical<T>(x)+BYTES_TO_HEIGHT, heightX);
-        file.close();
+        int height= max(getHeight(t), getHeight(rightPos))+1;
+        write<int>(getPosFisical<T>(pos)+BYTES_TO_HEIGHT,height);
+        int heightX = max(getHeight(pos),getHeight(read<long>(getPosFisical<T>(x)+BYTES_TO_RIGHT)))+1;
+        write<int>(getPosFisical<T>(x)+BYTES_TO_HEIGHT, heightX);
         return x;
     };
     long rotateLeft(long pos){
         long y ,t, leftPos;
-        fstream file(filename, ios::in | ios::out | ios::ate | ios::binary);
-        /*file.seekg(getPosFisical<T>(pos)+BYTES_TO_LEFT, ios::beg);
-        file.read((char*)&x, sizeof(long));
-        file.seekg(getPosFisical<T>(x)+BYTES_TO_RIGHT, ios::beg);
-        file.read((char*)&t, sizeof(long));*/
-        leftPos = read<long>(file,getPosFisical<T>(pos)+BYTES_TO_LEFT);
-        file.read((char*)&y, sizeof(long));//
-        t = read<long>(file,getPosFisical<T>(y)+BYTES_TO_LEFT);
-
-        write(file,getPosFisical<T>(y)+BYTES_TO_LEFT,pos);
-        write(file,getPosFisical<T>(pos)+BYTES_TO_RIGHT,t);/*
-        file.seekp(getPosFisical<T>(x)+BYTES_TO_RIGHT, ios::beg);
-        file.write((char*)&pos, sizeof(long));
-        file.seekp(getPosFisical<T>(pos)+BYTES_TO_LEFT, ios::beg);
-        file.write((char*)&t, sizeof(long));*/
-
-        int height= max(getHeight(y), getHeight(leftPos))+1;
-        write(file,getPosFisical<T>(pos)+BYTES_TO_HEIGHT,height);
-        int heightY = max(getHeight(read<long>(file,getPosFisical<T>(y)+BYTES_TO_LEFT)),getHeight(read<long>(file,getPosFisical<T>(y)+BYTES_TO_RIGHT)))+1;
-        write(file, getPosFisical<T>(y)+BYTES_TO_HEIGHT, heightY);
-        file.close();
+        leftPos = read<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT);
+        y = read<long>(getPosFisical<T>(pos)+BYTES_TO_RIGHT);
+        t = read<long>(getPosFisical<T>(y)+BYTES_TO_LEFT);
+        write<long>(getPosFisical<T>(y)+BYTES_TO_LEFT,pos);
+        write<long>(getPosFisical<T>(pos)+BYTES_TO_RIGHT,t);
+        int height= max(getHeight(t), getHeight(leftPos))+1;
+        write<int>(getPosFisical<T>(pos)+BYTES_TO_HEIGHT,height);
+        int heightY = max(getHeight(pos),getHeight(read<long>(getPosFisical<T>(y)+BYTES_TO_RIGHT)))+1;
+        write<int>(getPosFisical<T>(y)+BYTES_TO_HEIGHT, heightY);
         return y;
     };
-
     void rewriteHead() {
-        fstream file(filename, ios::in | ios::out | ios::ate | ios::binary);
+        ofstream file(filename, ios::in | ios::out | ios::ate | ios::binary);
         file.seekp(0, ios::beg);
         file.write((char*)&head, sizeof(HeadAVL));
+        file.flush();
         file.close();
     }
-
     pair<bool, long> insert(long posRoot, Record<T> record) {
         bool isAdded = true;
         fstream file;
@@ -179,10 +158,11 @@ class AVLFile {
             NodeAVL<T> node(record);
             long pos;
             if (head.nextDel == -1 ) {
-                file.open(filename, ios::out | ios::app | ios::binary);
+                file.open(filename, ios::in | ios::out | ios::app | ios::binary);
                 file.seekp(0, ios::end);
                 pos = file.tellp();
                 file.write((char*)&node, sizeof(NodeAVL<T>));
+                file.flush();
 
             }
             else {
@@ -191,7 +171,8 @@ class AVLFile {
                 pos = file.tellp();
                 NodeAVL<T> nodeDeleted;
                 file.read((char*)&nodeDeleted, sizeof(NodeAVL<T>));
-                write(file,getPosFisical<T>(nodeDeleted.nextDel),node);
+                write<NodeAVL<T>>(getPosFisical<T>(head.nextDel),node);
+                posRoot = head.nextDel;
                 head.nextDel = nodeDeleted.nextDel;
             }
             file.close();
@@ -200,47 +181,153 @@ class AVLFile {
             long newpos = (pos-sizeHeadAVL)/sizeNodeAVL;
             return make_pair(true, newpos);
         }
-        file.open(filename, ios::in | ios::out | ios::ate | ios::binary);
-        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(file,getPosFisical<T>(posRoot));
+        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
         if (record.key < nodeRoot.getKey()) {
             auto result = insert(nodeRoot.left,record);
-            write(file,getPosFisical<T>(posRoot)+BYTES_TO_LEFT,result.second);
+            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_LEFT,result.second);
             isAdded = result.first;
         }
         else if (record.key > nodeRoot.getKey()) {
             auto result = insert(nodeRoot.right,record);
-            write(file,getPosFisical<T>(posRoot)+BYTES_TO_RIGHT,result.second);
+            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_RIGHT,result.second);
             isAdded = result.first;
         }
         else
             return make_pair(false, posRoot);
 
-
+        nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
         int height = max(getHeight(nodeRoot.left),getHeight(nodeRoot.right))+1;
-        write(file,getPosFisical<T>(posRoot)+BYTES_TO_HEIGHT,height);
+        write<int>(getPosFisical<T>(posRoot)+BYTES_TO_HEIGHT,height);
 
         int balance = getBalance(posRoot);
 
-        NodeAVL<T> leaveLeft = read<NodeAVL<T>>(file,getPosFisical<T>(nodeRoot.left));
-        NodeAVL<T> leaveRight = read<NodeAVL<T>>(file,getPosFisical<T>(nodeRoot.right));
+        nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
 
-        if (balance > 1 && record.key < leaveLeft.getKey()) {
+        NodeAVL<T>* leaveLeft = (nodeRoot.left>-1)? new NodeAVL<T>(read<NodeAVL<T>>(getPosFisical<T>(nodeRoot.left))):nullptr;
+        NodeAVL<T>* leaveRight = (nodeRoot.right>-1)?new NodeAVL<T>(read<NodeAVL<T>>(getPosFisical<T>(nodeRoot.right))):nullptr;
+
+        if (balance > 1 && record.key < leaveLeft->getKey() && nodeRoot.left >-1) {
             return make_pair(true, rotateRight(posRoot));
         }
-        if (balance < -1 && record.key > leaveRight.getKey()) {
+        if (balance < -1 && record.key > leaveRight->getKey() && nodeRoot.right >-1) {
             return make_pair(true, rotateLeft(posRoot));
         }
-        if (balance > 1 && record.key > leaveLeft.getKey()) {
+        if (balance > 1 && record.key > leaveLeft->getKey() && nodeRoot.left >-1) {
             long leftRoot = rotateLeft(nodeRoot.left);
-            write(file, getPosFisical<T>(posRoot)+BYTES_TO_LEFT,leftRoot);
+            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_LEFT,leftRoot);
             return make_pair(true, rotateRight(posRoot));
         }
-        if (balance < -1 && record.key < leaveRight.getKey()) {
+        if (balance < -1 && record.key < leaveRight->getKey() && nodeRoot.right > -1) {
             long rightRoot = rotateRight(nodeRoot.right);
-            write(file, getPosFisical<T>(posRoot)+BYTES_TO_RIGHT,rightRoot);
+            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_RIGHT,rightRoot);
             return make_pair(true, rotateLeft(posRoot));
         }
+        file.close();
         return make_pair(isAdded, posRoot);
+    }
+
+    long mininValue(long pos) {
+        auto* leaves = new LeavesAVL (read<LeavesAVL>(getPosFisical<T>(pos)+BYTES_TO_LEFT));
+        while(leaves->left>-1) {
+            pos = leaves->left;
+            leaves = new LeavesAVL(read<LeavesAVL>(getPosFisical<T>(leaves->left)+BYTES_TO_LEFT));
+        }
+        delete leaves;
+        return pos;
+    }
+
+    pair<bool, long> deleteFL(long posRoot, T key){
+        if (posRoot == -1)
+            return make_pair(false, posRoot);
+
+        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+
+        if (key < nodeRoot.getKey()) {
+            auto result = deleteFL(nodeRoot.left, key);
+            write<long>(getPosFisical<T>(posRoot) + BYTES_TO_LEFT, result.second);
+        }
+        else if (key > nodeRoot.getKey()) {
+            auto result = deleteFL(nodeRoot.right, key);
+            write<long>(getPosFisical<T>(posRoot) + BYTES_TO_RIGHT, result.second);
+        }
+        else {
+            if (nodeRoot.left == -1 && nodeRoot.right == -1) {
+                nodeRoot.nextDel = head.nextDel;
+                head.nextDel = posRoot;
+                write<NodeAVL<T>>(getPosFisical<T>(posRoot), nodeRoot);
+                return make_pair(true, -1);
+            }
+            if (nodeRoot.left == -1) {
+                head.nextDel = posRoot;
+                return make_pair(true, nodeRoot.right);
+            }
+            if (nodeRoot.right == -1) {
+                head.nextDel = posRoot;
+                return make_pair(true, nodeRoot.left);
+            }
+            long posMinRight = mininValue(nodeRoot.right);
+            NodeAVL<T> minRightNode = read<NodeAVL<T>>(getPosFisical<T>(posMinRight));
+
+            nodeRoot.data = minRightNode.data;
+            //write<NodeAVL<T>>(getPosFisical<T>(posRoot), nodeRoot);
+            write<Record<T>>(getPosFisical<T>(posRoot)+BYTES_TO_DATA, nodeRoot.data);
+
+            auto result = deleteFL(nodeRoot.right, minRightNode.getKey());
+            write<long>(getPosFisical<T>(posRoot) + BYTES_TO_RIGHT, result.second);
+        }
+
+        int height = max(getHeight(nodeRoot.left), getHeight(nodeRoot.right)) + 1;
+        write<int>(getPosFisical<T>(posRoot) + BYTES_TO_HEIGHT, height);
+
+        int balance = getBalance(posRoot);
+
+        if (balance > 1 && getBalance(nodeRoot.left) >= 0) {
+            return make_pair(true, rotateRight(posRoot));
+        }
+
+        if (balance > 1 && getBalance(nodeRoot.left) < 0) {
+            write<long>(getPosFisical<T>(nodeRoot.left) + BYTES_TO_LEFT, rotateLeft(nodeRoot.left));
+            return make_pair(true, rotateRight(posRoot));
+        }
+
+        if (balance < -1 && getBalance(nodeRoot.right) <= 0) {
+            return make_pair(true, rotateLeft(posRoot));
+        }
+
+        if (balance < -1 && getBalance(nodeRoot.right) > 0) {
+            write<long>(getPosFisical<T>(nodeRoot.right) + BYTES_TO_RIGHT, rotateRight(nodeRoot.right));
+            return make_pair(true, rotateLeft(posRoot));
+        }
+
+        return make_pair(true, posRoot);
+    }
+
+    pair<bool, Record<T>> search(long posRoot, T key) {
+        if (posRoot == -1)
+            return make_pair(false, Record<T>());
+
+        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+
+        if (key < nodeRoot.getKey())
+            return search(nodeRoot.left, key);
+
+        if (key > nodeRoot.getKey())
+            return search(nodeRoot.right, key);
+
+        return make_pair(true, nodeRoot.data);
+    }
+
+    void rangeSearch(long posRoot, T keyMin, T keyMax, vector<Record<T>>& result) {
+        if (posRoot == -1) return;
+        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+        if (keyMin < nodeRoot.getKey())
+            rangeSearch(nodeRoot.left, keyMin, keyMax, result);
+
+        if (keyMin <= nodeRoot.getKey() && nodeRoot.getKey() <= keyMax)
+            result.push_back(nodeRoot.data);
+
+        if (keyMax > nodeRoot.getKey())
+            rangeSearch(nodeRoot.right, keyMin, keyMax, result);
     }
 
 public:
@@ -250,6 +337,7 @@ public:
             file.close();
             file.open(filename, ios::out | ios::binary);
             file.write((char*)&head, sizeof(HeadAVL));
+            file.flush();
         }
         else {
             file.read((char*)&head, sizeof(HeadAVL));
@@ -259,61 +347,130 @@ public:
         file.close();
     }
 
+
     void viewFile() {
         fstream file(filename, ios::in | ios::binary);
         file.seekg(0, ios::beg);
         file.read((char*)&head, sizeof(HeadAVL));
         cout<<"Root: "<<head.root<<"\tNextDel: "<<head.nextDel<<endl;
+        int count = 0;
         while(file.peek() != EOF) {
             NodeAVL<T> node;
             file.read((char*)&node, sizeof(NodeAVL<T>));
-            cout<<"Left: "<<node.left<<"\tRight: "<<node.right;
-            cout<<"\tHeight: "<<node.height<<"\tnextDel: "<<node.nextDel<<"\t";
+            cout<<count<<" : ";
+            cout<<"Left("<<node.left<<") - Right("<<node.right;
+            cout<<") - Height("<<node.height<<") - nextDel("<<node.nextDel<<")\t";
             node.data.show();
             cout<<endl;
+            count++;
         }
     }
 
     bool add(Record<T> record) {
         auto root = insert(head.root, record);
-        head.root = root.second;
-        rewriteHead();
-        return true;
+        if(root.first) {
+            HeadAVL nodeRoot = read<HeadAVL>(0);
+            if (head.root != root.second || head.nextDel != nodeRoot.nextDel) {
+                if (head.root != root.second)
+                    head.root = root.second;
+                rewriteHead();
+            }
+        }
+        cout<<(root.first?"Insercion correcta del ":"Ya existe el ")<<"registro con key("<<record.key<<")\n";
+        return root.first;
     }
 
+    bool remove(T key) {
+        auto root = deleteFL(head.root, key);
+        if(root.first) {
+            HeadAVL nodeRoot = read<HeadAVL>(0);
+            if (head.root != root.second || head.nextDel != nodeRoot.nextDel) {
+                if (head.root != root.second)
+                    head.root = root.second;
+                rewriteHead();
+            }
+        }
+        cout<<(root.first?"Eliminacion correcta del ":"No se encontro el ")<<"registro con key("<<key<<")\n";
+        return root.first;
+    }
 
+    Record<T> search(T key) {
+        auto result = search(head.root, key);
+        cout<<((result.first)?"Registro encontrado":"No se encontró el registro")<<"con key(" << key << "):\n";
+        result.second.show();
+        cout<<endl;
+        return result.second;
+    }
 
+    vector<Record<T>> rangeSearch(T keyMin, T keyMax) {
+        vector<Record<T>> result;
+        rangeSearch(head.root, keyMin, keyMax, result);
+        if (!result.empty()) {
+            cout << "Registros en el rango [" << keyMin << ", " << keyMax << "]:\n";
+            for (const auto& record : result) {
+                record.show();
+                cout << endl;
+            }
+        }
+        else
+            cout << "No se encontraron registros en el rango [" << keyMin << ", " << keyMax << "].\n";
 
+        return result;
+    }
 
 
 };
 
-
-int main() {
-    AVLFile<int> avl("avlfile.dat");
-
+template<class T>
+void test_insert1(AVLFile<T> &avl) {
     avl.add(Record<int>(10008, "Claudio", "Echarre","" ,1500));
     avl.add(Record<int>(10009, "Aaron", "Navaro","" ,1000));
-    avl.viewFile();
     avl.add(Record<int>(10010, "Marcelino", "Vargas","" ,1300));
-    avl.viewFile();
     avl.add(Record<int>(10020, "Piero", "Guerrero","" ,1000));
+    avl.add(Record<int>(10015, "Juan", "Aquino","" ,2000));
+    avl.add(Record<int>(10025, "Jef", "Farfan","" ,1000));
+    avl.viewFile();
+}
+template<class T>
+void test_remove(AVLFile<T> &avl) {
+    avl.remove(10015);
+    avl.viewFile();
+
+    avl.remove(10009);
+    avl.viewFile();
+}
+template<class T>
+void test_insert2(AVLFile<T> &avl) {
+    avl.viewFile();
+    avl.add(Record<int>(10009, "Aaron", "Navaro","" ,1000));
+    avl.viewFile();
+}
+template<class T>
+void test_insert3(AVLFile<T> &avl) {
     avl.viewFile();
     avl.add(Record<int>(10015, "Juan", "Aquino","" ,2000));
-    /*
-    cout << "Recorrido Inorder:" << endl;
-    avl.inorder();
-
-    cout << "\nBusqueda por rango:" << endl;
-    vector<Record<int>> result = avl.rangeSearch(10010, 10015);
-    for (const auto& rec : result) {
-        cout << rec.key << ": " << rec.nombre<< "->" << rec.apellido<< "->" << rec.sueldo << endl;
-    }
-    */
     avl.viewFile();
-    /*avl.add(Record<int>(10010, "Claudio", "Echarre","CS" ,1500));
-    avl.viewFile();*/
-    //avl.add(Record<int>(10011, "Juan", "Navaro","" ,1000));
-    //avl.viewFile();
-    return 0;
 }
+
+template<class T>
+void test_search(AVLFile<T> &avl) {
+    avl.search(10025);
+    avl.viewFile();
+}
+
+template<class T>
+void test_rangeSearch(AVLFile<T> &avl) {
+    vector<Record<T>> vec =  avl.rangeSearch(10012,10025);
+}
+
+/*
+int main() {
+    AVLFile<int> avl("avlfile.dat");
+    /*test_insert1(avl);
+    test_remove(avl);
+    test_insert2(avl);
+    test_insert3(avl);
+    test_search(avl);
+    test_rangeSearch(avl);
+    return 0;
+}*/
