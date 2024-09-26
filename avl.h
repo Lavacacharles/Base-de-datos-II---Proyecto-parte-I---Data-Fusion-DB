@@ -1,7 +1,10 @@
+#ifndef AVL_H
+#define AVL_H
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cstring>
+#include <string>
 #include <chrono>
 
 #define HEAD_FILE 8;
@@ -13,44 +16,77 @@
 
 using namespace std;
 
+inline std::string operator+(const std::string& str, const char* arr_char) {
+    return str + std::string(arr_char);
+}
+inline std::string operator+(const char* arr_char, const std::string& str) {
+    return std::string(arr_char) + str;
+}
 template<class T>
-struct Record {
-    T key;
-    char nombre[15]{};
-    char apellidos[15]{};
-    char puesto[2]{};
-    int sueldo=0;
-
-    Record()= default;
-    Record(T key, const string& nombre_, const string& apellidos_, const string& puesto_, int sueldo_) {
-        this->key = static_cast<T>(key);
-        strcpy(this->nombre, nombre_.c_str());
-        strcpy(this->apellidos, apellidos_.c_str());
-        strcpy(this->puesto, puesto_.c_str());
-        this->sueldo = sueldo_;
+string concatenate(T char1, const char* arr_char2) {
+    if constexpr (std::is_same<T, char*>::value) {
+        return char1 + string(arr_char2);
     }
-    void show() const {
-        cout << this->key;
-        cout << "\t" << this->nombre;
-        cout << "\t" << this->apellidos;
+    // Si el tipo es un entero
+    else if constexpr (std::is_same<T, int>::value) {
+        return to_string(char1) + string(arr_char2);
     }
-
-    string getData() {
-        string output = to_string(key) + "," + nombre + "," + apellidos + "," + puesto + "," + to_string(sueldo)+"\n";
-        return output;
+    // Si el tipo es un float
+    else if constexpr (std::is_same<T, float>::value) {
+        return to_string(char1) + string(arr_char2);// Retorna el valor ASCII como float
     }
-};
+    // Si el tipo es un string
+    else if constexpr (std::is_same<T, std::string>::value) {
+        return char1+string(arr_char2); // Convierte el char a string
+    }
+    else {
+        throw std::invalid_argument("Tipo no soportado");
+    }
+}
 
 template<class T>
+string convertToString (T input) {
+    if constexpr (std::is_same<T, int>::value) {
+        return to_string(input);
+    }
+    else if constexpr (std::is_same<T, string>::value) {
+        return input;
+    }
+    else {
+        throw std::invalid_argument("Tipo no soportado");
+    }
+}
+
+template<class T>
+T convert (string input) {
+    if constexpr (std::is_same<T, int>::value) {
+        return atoi(input.c_str());
+    }
+    else if constexpr (std::is_same<T, string>::value) {
+        return string(input);
+    }
+    else {
+        throw std::invalid_argument("Tipo no soportado");
+    }
+}
+
+bool operator>(const string& str, const char* charArray) {
+    return str > string(charArray); // Convertir char[] a std::string y comparar
+}
+bool operator<(const string& str, const char* charArray) {
+    return str < string(charArray); // Convertir char[] a std::string y comparar
+}
+
+template<class R,class T>
 struct NodeAVL {
     long nextDel;
     long left;
     long right;
     int height;
-    Record<T> data;
-    NodeAVL(Record<T> record): data(record), left(-1), right(-1), height(0), nextDel(-1) {}
+    R data;
+    NodeAVL(R record): data(record), left(-1), right(-1), height(0), nextDel(-1) {}
     NodeAVL(){}
-    int getKey(){return data.key;}
+    T getKey(){return data.getKey();}
 };
 
 struct HeadAVL {
@@ -63,12 +99,12 @@ struct LeavesAVL {
     long right;
 };
 
-template<class T>
+template<class R, class T>
 long getPosFisical(long pos) {
-    return pos*sizeof(NodeAVL<T>)+HEAD_FILE;
+    return pos*sizeof(NodeAVL<R,T>)+HEAD_FILE;
 }
 
-template<class T>
+template<class R, class T>
 class AVLFile {
     HeadAVL head;
     string filename;
@@ -77,7 +113,7 @@ class AVLFile {
     int getBalance(long pos) {
         ifstream file(filename, ios::in | ios::binary);
         LeavesAVL leaves;
-        file.seekg(getPosFisical<T>(pos)+BYTES_TO_LEFT, ios::beg);
+        file.seekg(getPosFisical<R,T>(pos)+BYTES_TO_LEFT, ios::beg);
         file.read((char*)&leaves, sizeof(LeavesAVL));
 
         if(leaves.left ==-1 && leaves.right==-1) {
@@ -85,12 +121,12 @@ class AVLFile {
         }
         int hLeft=-1 , hRight=-1;
         if(leaves.left > -1) {
-            file.seekg(getPosFisical<T>(leaves.left)+BYTES_TO_HEIGHT, ios::beg);
+            file.seekg(getPosFisical<R,T>(leaves.left)+BYTES_TO_HEIGHT, ios::beg);
             file.read((char*)&hLeft, sizeof(int));
         }
 
         if(leaves.right > -1) {
-            file.seekg(getPosFisical<T>(leaves.right)+BYTES_TO_HEIGHT, ios::beg);
+            file.seekg(getPosFisical<R,T>(leaves.right)+BYTES_TO_HEIGHT, ios::beg);
             file.read((char*)&hRight, sizeof(int));
         }
         file.close();
@@ -102,7 +138,7 @@ class AVLFile {
             return -1;
         ifstream file(filename, ios::in | ios::binary);
         int height=0;
-        file.seekg(getPosFisical<T>(pos)+BYTES_TO_HEIGHT, ios::beg);
+        file.seekg(getPosFisical<R,T>(pos)+BYTES_TO_HEIGHT, ios::beg);
         file.read((char*)&height, sizeof(int));
         file.close();
         return height;
@@ -130,30 +166,30 @@ class AVLFile {
 
     long rotateRight(long pos) {
         long x ,t, rightPos;
-        x = read<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT);
-        rightPos = read<long>(getPosFisical<T>(pos)+BYTES_TO_RIGHT);
-        t = read<long>(getPosFisical<T>(x)+BYTES_TO_RIGHT);
-        write<long>(getPosFisical<T>(x)+BYTES_TO_RIGHT,pos);
-        write<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT,t);
+        x = read<long>(getPosFisical<R,T>(pos)+BYTES_TO_LEFT);
+        rightPos = read<long>(getPosFisical<R,T>(pos)+BYTES_TO_RIGHT);
+        t = read<long>(getPosFisical<R,T>(x)+BYTES_TO_RIGHT);
+        write<long>(getPosFisical<R,T>(x)+BYTES_TO_RIGHT,pos);
+        write<long>(getPosFisical<R,T>(pos)+BYTES_TO_LEFT,t);
 
         int height= max(getHeight(t), getHeight(rightPos))+1;
-        write<int>(getPosFisical<T>(pos)+BYTES_TO_HEIGHT,height);
-        int heightX = max(getHeight(pos),getHeight(read<long>(getPosFisical<T>(x)+BYTES_TO_RIGHT)))+1;
-        write<int>(getPosFisical<T>(x)+BYTES_TO_HEIGHT, heightX);
+        write<int>(getPosFisical<R,T>(pos)+BYTES_TO_HEIGHT,height);
+        int heightX = max(getHeight(pos),getHeight(read<long>(getPosFisical<R,T>(x)+BYTES_TO_RIGHT)))+1;
+        write<int>(getPosFisical<R,T>(x)+BYTES_TO_HEIGHT, heightX);
         return x;
     };
 
     long rotateLeft(long pos){
         long y ,t, leftPos;
-        leftPos = read<long>(getPosFisical<T>(pos)+BYTES_TO_LEFT);
-        y = read<long>(getPosFisical<T>(pos)+BYTES_TO_RIGHT);
-        t = read<long>(getPosFisical<T>(y)+BYTES_TO_LEFT);
-        write<long>(getPosFisical<T>(y)+BYTES_TO_LEFT,pos);
-        write<long>(getPosFisical<T>(pos)+BYTES_TO_RIGHT,t);
+        leftPos = read<long>(getPosFisical<R,T>(pos)+BYTES_TO_LEFT);
+        y = read<long>(getPosFisical<R,T>(pos)+BYTES_TO_RIGHT);
+        t = read<long>(getPosFisical<R,T>(y)+BYTES_TO_LEFT);
+        write<long>(getPosFisical<R,T>(y)+BYTES_TO_LEFT,pos);
+        write<long>(getPosFisical<R,T>(pos)+BYTES_TO_RIGHT,t);
         int height= max(getHeight(t), getHeight(leftPos))+1;
-        write<int>(getPosFisical<T>(pos)+BYTES_TO_HEIGHT,height);
-        int heightY = max(getHeight(pos),getHeight(read<long>(getPosFisical<T>(y)+BYTES_TO_RIGHT)))+1;
-        write<int>(getPosFisical<T>(y)+BYTES_TO_HEIGHT, heightY);
+        write<int>(getPosFisical<R,T>(pos)+BYTES_TO_HEIGHT,height);
+        int heightY = max(getHeight(pos),getHeight(read<long>(getPosFisical<R,T>(y)+BYTES_TO_RIGHT)))+1;
+        write<int>(getPosFisical<R,T>(y)+BYTES_TO_HEIGHT, heightY);
         return y;
     };
 
@@ -165,75 +201,75 @@ class AVLFile {
         file.close();
     }
 
-    pair<bool, long> insert(long posRoot, Record<T> record) {
+    pair<bool, long> insert(long posRoot, R record) {
         bool isAdded = true;
         fstream file;
         if(posRoot == -1) {
-            NodeAVL<T> node(record);
+            NodeAVL<R,T> node(record);
             long pos;
             if (head.nextDel == -1 ) {
                 file.open(filename, ios::in | ios::out | ios::app | ios::binary);
                 file.seekp(0, ios::end);
                 pos = file.tellp();
-                file.write((char*)&node, sizeof(NodeAVL<T>));
+                file.write((char*)&node, sizeof(NodeAVL<R,T>));
                 file.flush();
 
             }
             else {
                 file.open(filename, ios::in | ios::out | ios::ate | ios::binary);
-                file.seekp(getPosFisical<T>(head.nextDel), ios::beg);
+                file.seekp(getPosFisical<R,T>(head.nextDel), ios::beg);
                 pos = file.tellp();
-                NodeAVL<T> nodeDeleted;
-                file.read((char*)&nodeDeleted, sizeof(NodeAVL<T>));
-                write<NodeAVL<T>>(getPosFisical<T>(head.nextDel),node);
+                NodeAVL<R,T> nodeDeleted;
+                file.read((char*)&nodeDeleted, sizeof(NodeAVL<R,T>));
+                write<NodeAVL<R,T>>(getPosFisical<R,T>(head.nextDel),node);
                 posRoot = head.nextDel;
                 head.nextDel = nodeDeleted.nextDel;
             }
             file.close();
             long sizeHeadAVL = sizeof(HeadAVL);
-            long sizeNodeAVL = sizeof(NodeAVL<T>);
+            long sizeNodeAVL = sizeof(NodeAVL<R,T>);
             long newpos = (pos-sizeHeadAVL)/sizeNodeAVL;
             return make_pair(true, newpos);
         }
-        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
-        if (record.key < nodeRoot.getKey()) {
+        NodeAVL<R,T> nodeRoot = read<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot));
+        if (record.getKey() < nodeRoot.getKey()) {
             auto result = insert(nodeRoot.left,record);
-            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_LEFT,result.second);
+            write<long>(getPosFisical<R,T>(posRoot)+BYTES_TO_LEFT,result.second);
             isAdded = result.first;
         }
-        else if (record.key > nodeRoot.getKey()) {
+        else if (record.getKey() > nodeRoot.getKey()) {
             auto result = insert(nodeRoot.right,record);
-            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_RIGHT,result.second);
+            write<long>(getPosFisical<R,T>(posRoot)+BYTES_TO_RIGHT,result.second);
             isAdded = result.first;
         }
         else
             return make_pair(false, posRoot);
 
-        nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+        nodeRoot = read<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot));
         int height = max(getHeight(nodeRoot.left),getHeight(nodeRoot.right))+1;
-        write<int>(getPosFisical<T>(posRoot)+BYTES_TO_HEIGHT,height);
+        write<int>(getPosFisical<R,T>(posRoot)+BYTES_TO_HEIGHT,height);
 
         int balance = getBalance(posRoot);
 
-        nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+        nodeRoot = read<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot));
 
-        NodeAVL<T>* leaveLeft = (nodeRoot.left>-1)? new NodeAVL<T>(read<NodeAVL<T>>(getPosFisical<T>(nodeRoot.left))):nullptr;
-        NodeAVL<T>* leaveRight = (nodeRoot.right>-1)?new NodeAVL<T>(read<NodeAVL<T>>(getPosFisical<T>(nodeRoot.right))):nullptr;
+        NodeAVL<R,T>* leaveLeft = (nodeRoot.left>-1)? new NodeAVL<R,T>(read<NodeAVL<R,T>>(getPosFisical<R,T>(nodeRoot.left))):nullptr;
+        NodeAVL<R,T>* leaveRight = (nodeRoot.right>-1)?new NodeAVL<R,T>(read<NodeAVL<R,T>>(getPosFisical<R,T>(nodeRoot.right))):nullptr;
 
-        if (balance > 1 && record.key < leaveLeft->getKey() && nodeRoot.left >-1) {
+        if (balance > 1 && record.getKey() < leaveLeft->getKey() && nodeRoot.left >-1) {
             return make_pair(true, rotateRight(posRoot));
         }
-        if (balance < -1 && record.key > leaveRight->getKey() && nodeRoot.right >-1) {
+        if (balance < -1 && record.getKey() > leaveRight->getKey() && nodeRoot.right >-1) {
             return make_pair(true, rotateLeft(posRoot));
         }
-        if (balance > 1 && record.key > leaveLeft->getKey() && nodeRoot.left >-1) {
+        if (balance > 1 && record.getKey() > leaveLeft->getKey() && nodeRoot.left >-1) {
             long leftRoot = rotateLeft(nodeRoot.left);
-            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_LEFT,leftRoot);
+            write<long>(getPosFisical<R,T>(posRoot)+BYTES_TO_LEFT,leftRoot);
             return make_pair(true, rotateRight(posRoot));
         }
-        if (balance < -1 && record.key < leaveRight->getKey() && nodeRoot.right > -1) {
+        if (balance < -1 && record.getKey() < leaveRight->getKey() && nodeRoot.right > -1) {
             long rightRoot = rotateRight(nodeRoot.right);
-            write<long>(getPosFisical<T>(posRoot)+BYTES_TO_RIGHT,rightRoot);
+            write<long>(getPosFisical<R,T>(posRoot)+BYTES_TO_RIGHT,rightRoot);
             return make_pair(true, rotateLeft(posRoot));
         }
         file.close();
@@ -241,34 +277,37 @@ class AVLFile {
     }
 
     long mininValue(long pos) {
-        auto* leaves = new LeavesAVL (read<LeavesAVL>(getPosFisical<T>(pos)+BYTES_TO_LEFT));
+        auto* leaves = new LeavesAVL (read<LeavesAVL>(getPosFisical<R,T>(pos)+BYTES_TO_LEFT));
         while(leaves->left>-1) {
             pos = leaves->left;
-            leaves = new LeavesAVL(read<LeavesAVL>(getPosFisical<T>(leaves->left)+BYTES_TO_LEFT));
+            leaves = new LeavesAVL(read<LeavesAVL>(getPosFisical<R,T>(leaves->left)+BYTES_TO_LEFT));
         }
         delete leaves;
         return pos;
     }
 
     pair<bool, long> deleteFL(long posRoot, T key){
+        bool wasDeleted = true;
         if (posRoot == -1)
             return make_pair(false, posRoot);
 
-        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+        NodeAVL<R,T> nodeRoot = read<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot));
 
         if (key < nodeRoot.getKey()) {
             auto result = deleteFL(nodeRoot.left, key);
-            write<long>(getPosFisical<T>(posRoot) + BYTES_TO_LEFT, result.second);
+            wasDeleted = result.first;
+            write<long>(getPosFisical<R,T>(posRoot) + BYTES_TO_LEFT, result.second);
         }
         else if (key > nodeRoot.getKey()) {
             auto result = deleteFL(nodeRoot.right, key);
-            write<long>(getPosFisical<T>(posRoot) + BYTES_TO_RIGHT, result.second);
+            wasDeleted = result.first;
+            write<long>(getPosFisical<R,T>(posRoot) + BYTES_TO_RIGHT, result.second);
         }
         else {
             if (nodeRoot.left == -1 && nodeRoot.right == -1) {
                 nodeRoot.nextDel = head.nextDel;
                 head.nextDel = posRoot;
-                write<NodeAVL<T>>(getPosFisical<T>(posRoot), nodeRoot);
+                write<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot), nodeRoot);
                 return make_pair(true, -1);
             }
             if (nodeRoot.left == -1) {
@@ -280,18 +319,18 @@ class AVLFile {
                 return make_pair(true, nodeRoot.left);
             }
             long posMinRight = mininValue(nodeRoot.right);
-            NodeAVL<T> minRightNode = read<NodeAVL<T>>(getPosFisical<T>(posMinRight));
+            NodeAVL<R,T> minRightNode = read<NodeAVL<R,T>>(getPosFisical<R,T>(posMinRight));
 
             nodeRoot.data = minRightNode.data;
-            //write<NodeAVL<T>>(getPosFisical<T>(posRoot), nodeRoot);
-            write<Record<T>>(getPosFisical<T>(posRoot)+BYTES_TO_DATA, nodeRoot.data);
+            //write<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot), nodeRoot);
+            write<R>(getPosFisical<R,T>(posRoot)+BYTES_TO_DATA, nodeRoot.data);
 
             auto result = deleteFL(nodeRoot.right, minRightNode.getKey());
-            write<long>(getPosFisical<T>(posRoot) + BYTES_TO_RIGHT, result.second);
+            write<long>(getPosFisical<R,T>(posRoot) + BYTES_TO_RIGHT, result.second);
         }
 
         int height = max(getHeight(nodeRoot.left), getHeight(nodeRoot.right)) + 1;
-        write<int>(getPosFisical<T>(posRoot) + BYTES_TO_HEIGHT, height);
+        write<int>(getPosFisical<R,T>(posRoot) + BYTES_TO_HEIGHT, height);
 
         int balance = getBalance(posRoot);
 
@@ -300,7 +339,7 @@ class AVLFile {
         }
 
         if (balance > 1 && getBalance(nodeRoot.left) < 0) {
-            write<long>(getPosFisical<T>(nodeRoot.left) + BYTES_TO_LEFT, rotateLeft(nodeRoot.left));
+            write<long>(getPosFisical<R,T>(nodeRoot.left) + BYTES_TO_LEFT, rotateLeft(nodeRoot.left));
             return make_pair(true, rotateRight(posRoot));
         }
 
@@ -309,18 +348,18 @@ class AVLFile {
         }
 
         if (balance < -1 && getBalance(nodeRoot.right) > 0) {
-            write<long>(getPosFisical<T>(nodeRoot.right) + BYTES_TO_RIGHT, rotateRight(nodeRoot.right));
+            write<long>(getPosFisical<R,T>(nodeRoot.right) + BYTES_TO_RIGHT, rotateRight(nodeRoot.right));
             return make_pair(true, rotateLeft(posRoot));
         }
 
-        return make_pair(true, posRoot);
+        return make_pair(wasDeleted, posRoot);
     }
 
-    pair<bool, Record<T>> search(long posRoot, T key) {
+    pair<bool, R> search(long posRoot, T key) {
         if (posRoot == -1)
-            return make_pair(false, Record<T>());
+            return make_pair(false, R());
 
-        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+        NodeAVL<R,T> nodeRoot = read<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot));
 
         if (key < nodeRoot.getKey())
             return search(nodeRoot.left, key);
@@ -331,9 +370,9 @@ class AVLFile {
         return make_pair(true, nodeRoot.data);
     }
 
-    void rangeSearch(long posRoot, T keyMin, T keyMax, vector<Record<T>>& result) {
+    void rangeSearch(long posRoot, T keyMin, T keyMax, vector<R>& result) {
         if (posRoot == -1) return;
-        NodeAVL<T> nodeRoot = read<NodeAVL<T>>(getPosFisical<T>(posRoot));
+        NodeAVL<R,T> nodeRoot = read<NodeAVL<R,T>>(getPosFisical<R,T>(posRoot));
         if (keyMin < nodeRoot.getKey())
             rangeSearch(nodeRoot.left, keyMin, keyMax, result);
 
@@ -344,16 +383,14 @@ class AVLFile {
             rangeSearch(nodeRoot.right, keyMin, keyMax, result);
     }
 
-    void writeOutputFile(Record<T>& record, const int& duration, const bool state) {
+    void writeOutputFile(R& record, const bool state) {
         ofstream outputFile;
         outputFile.open(result,ios::out|ios::trunc);
         if(state) {
             outputFile<<record.getData();
         }
-        string outputString = "Execution time: "+to_string(duration)+"ms.\n";
-        outputFile<<outputString;
     }
-    void writeOutputFile(vector<Record<T>>& vector, const int& duration, const bool state) {
+    void writeOutputFile(vector<R>& vector, const bool state) {
         ofstream outputFile;
         outputFile.open(result,ios::out|ios::trunc);
         if(state) {
@@ -361,18 +398,16 @@ class AVLFile {
                 outputFile<<vector[i].getData();
             }
         }
-        string outputString = "Execution time: "+to_string(duration)+"ms.\n";
-        outputFile<<outputString;
     }
-    void writeOutputFile(const int& duration, const bool state) {
+    void writeOutputFile(const bool state) {
         ofstream outputFile;
         outputFile.open(result,ios::out|ios::trunc);
         if(!state) {
-            string outputString = "Process failed in "+to_string(duration)+"ms.\n";
+            string outputString = "Process failed\n";
             outputFile<<outputString;
             return;
         }
-        string outputString = "Execution time: "+to_string(duration)+"ms.\n";
+        string outputString = "Execution successful\n";
         outputFile<<outputString;
     }
 
@@ -388,8 +423,6 @@ public:
         }
         else {
             file.read((char*)&head, sizeof(HeadAVL));
-            cout<<"Root: "<<head.root<<endl;
-            cout<<"NextDel: "<<head.nextDel<<endl;
         }
         file.close();
     }
@@ -404,8 +437,6 @@ public:
         }
         else {
             file.read((char*)&head, sizeof(HeadAVL));
-            cout<<"Root: "<<head.root<<endl;
-            cout<<"NextDel: "<<head.nextDel<<endl;
         }
         file.close();
     }
@@ -418,8 +449,8 @@ public:
         cout<<"Root: "<<head.root<<"\tNextDel: "<<head.nextDel<<endl;
         int count = 0;
         while(file.peek() != EOF) {
-            NodeAVL<T> node;
-            file.read((char*)&node, sizeof(NodeAVL<T>));
+            NodeAVL<R,T> node;
+            file.read((char*)&node, sizeof(NodeAVL<R,T>));
             cout<<count<<" : ";
             cout<<"Left("<<node.left<<") - Right("<<node.right;
             cout<<") - Height("<<node.height<<") - nextDel("<<node.nextDel<<")\t";
@@ -429,7 +460,7 @@ public:
         }
     }
 
-    bool add(Record<T> record) {
+    bool add(R record) {
         auto start = chrono::high_resolution_clock::now();
         auto root = insert(head.root, record);
         auto end = chrono::high_resolution_clock::now();
@@ -442,16 +473,13 @@ public:
                 rewriteHead();
             }
         }
-        writeOutputFile(duration.count(),root.first);
-        cout<<(root.first?"Insercion correcta del ":"Ya existe el ")<<"registro con key("<<record.key<<")\n";
+        writeOutputFile(root.first);
+        cout<<(root.first?"Insercion correcta del ":"Ya existe el ")<<"registro con key("<<record.getKey()<<")\n";
         return root.first;
     }
 
     bool remove(T key) {
-        auto start = chrono::high_resolution_clock::now();
         auto root = deleteFL(head.root, key);
-        auto end = chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         if(root.first) {
             HeadAVL nodeRoot = read<HeadAVL>(0);
             if (head.root != root.second || head.nextDel != nodeRoot.nextDel) {
@@ -460,18 +488,14 @@ public:
                 rewriteHead();
             }
         }
-        writeOutputFile(duration.count(),root.first);
+        writeOutputFile(root.first);
         cout<<(root.first?"Eliminacion correcta del ":"No se encontro el ")<<"registro con key("<<key<<")\n";
         return root.first;
     }
 
-    Record<T> search(T key) {
-        auto start = chrono::high_resolution_clock::now();
+    R search(T key) {
         auto result = search(head.root, key);
-        auto end = chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-
-        writeOutputFile(result.second,duration.count(),result.first);
+        writeOutputFile(result.second,result.first);
         cout<<((result.first)?"Registro encontrado":"No se encontró el registro")<<"con key(" << key << "):\n";
         result.second.show();
         cout<<endl;
@@ -479,15 +503,12 @@ public:
         return result.second;
     }
 
-    vector<Record<T>> rangeSearch(T keyMin, T keyMax) {
-        vector<Record<T>> result;
-        auto start = chrono::high_resolution_clock::now();
+    vector<R> rangeSearch(T keyMin, T keyMax) {
+        vector<R> result;
         rangeSearch(head.root, keyMin, keyMax, result);
-        auto end = chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
         bool state = (!result.empty())?true:false;
-        writeOutputFile(result,duration.count(),state);
+        writeOutputFile(result,state);
 
         if (state) {
             cout << "Registros en el rango [" << keyMin << ", " << keyMax << "]:\n";
@@ -507,56 +528,5 @@ public:
 
 };
 
-template<class T>
-void test_insert1(AVLFile<T> &avl) {
-    avl.add(Record<int>(10008, "Claudio", "Echarre","" ,1500));
-    avl.add(Record<int>(10009, "Aaron", "Navaro","" ,1000));
-    avl.add(Record<int>(10010, "Marcelino", "Vargas","" ,1300));
-    avl.add(Record<int>(10020, "Piero", "Guerrero","" ,1000));
-    avl.add(Record<int>(10015, "Juan", "Aquino","" ,2000));
-    avl.add(Record<int>(10025, "Jef", "Farfan","" ,1000));
-    avl.viewFile();
-}
-template<class T>
-void test_remove(AVLFile<T> &avl) {
-    avl.remove(10015);
-    avl.viewFile();
 
-    avl.remove(10009);
-    avl.viewFile();
-}
-template<class T>
-void test_insert2(AVLFile<T> &avl) {
-    avl.viewFile();
-    avl.add(Record<int>(10009, "Aaron", "Navaro","" ,1000));
-    avl.viewFile();
-}
-template<class T>
-void test_insert3(AVLFile<T> &avl) {
-    avl.viewFile();
-    avl.add(Record<int>(10015, "Juan", "Aquino","" ,2000));
-    avl.viewFile();
-}
-
-template<class T>
-void test_search(AVLFile<T> &avl) {
-    avl.search(10025);
-    avl.viewFile();
-}
-
-template<class T>
-void test_rangeSearch(AVLFile<T> &avl) {
-    vector<Record<T>> vec =  avl.rangeSearch(10012,10025);
-}
-
-/*
-int main() {
-    AVLFile<int> avl("avlfile.dat");
-    test_insert1(avl);
-    test_remove(avl);
-    test_insert2(avl);
-    test_insert3(avl);
-    test_search(avl);
-    test_rangeSearch(avl);
-    return 0;
-}*/
+#endif
