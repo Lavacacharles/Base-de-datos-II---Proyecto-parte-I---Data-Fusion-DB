@@ -1,5 +1,4 @@
 # Data Fusion DB - Proyecto 1
-***
 ### Proyecto P1 - Base de datos II - Sección I
 
 ### Team
@@ -13,7 +12,7 @@ El proyecto DataFusionDB consiste en la integración (**Fusion**) de diferentes 
 técnicas avanzadas de organización de información dentro de una única base de datos (**DB**).
 El propósito de construir una plataforma versátil que unifique datos estructurados y no
 estructurados, incluyendo documentos textuales en principio para luego incluir objetos multimedia.
-***
+
 # Objetivos
 ### Generales
 - Soporte de modelo relacion basado en tablas.
@@ -21,7 +20,7 @@ estructurados, incluyendo documentos textuales en principio para luego incluir o
 ### Específicos
 - Implementación de un mini gestor de base de datos optimizado para la gestión de la información.
 - Aplicación y comparación en tiempos de ejecución entre cada técnica de organización e indexación de archivos físicos.
-***
+
 # Técnicas de indexación y Organización de Archivos
 Para la gestión de los archivos físicos, se eligieron 3 estrategias para la organización de archivos e índices.
 - ***AVL File*** 
@@ -148,13 +147,13 @@ Búsqueda en BST
 
 
 
-***
+
 # Compilador y GUI
 
 
 
 
-***
+
 # Resultados experimentales
 
 Para el ánalisis de los rendimientos entre técnicas, se utilizaron las tablas de tiempo de ejecución. 
@@ -253,5 +252,5 @@ algoritmo.
 - [ ] asdsa
 - [ ] asdsa
 
-***
+
 # Execute
