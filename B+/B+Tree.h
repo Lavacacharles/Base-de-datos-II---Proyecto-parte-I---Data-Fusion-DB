@@ -10,13 +10,19 @@
 #define ORDER 5
 #define PAGE_SIZE 20
 #define NELEMENTS 4
+#define NCOLS 5
 
 using namespace std;
 
 
 struct Record {
     char** data;
-    Record(){}
+    Record(){
+        data = new char*[NCOLS];
+        for(int i = 0; i < NCOLS; i++){
+            data[i] = new char[255];
+        }
+    }
     Record(int nelements, string l[]){
         char **word = new char*[nelements];
         for(int i = 0; i < nelements; i++){
@@ -57,7 +63,6 @@ struct Index {
     int posHijos[ORDER + 1]; // punteros
     int nRegistros;
     bool isLeaf;
-    int next;
     
     Index(){
         nRegistros = 0;

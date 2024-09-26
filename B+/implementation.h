@@ -227,6 +227,72 @@ void BPlusTree::Insert(Record NuevoRegistro) {
     }
 };
 
+void BPlusTree::InsertIndex(const Record &NuevoRegistro, int IndexLeaf) {
+    ;
+}
+
+
+void BPlusTree::InsertRoot(const Record &NuevoRegistro, int IndexLeaf) {
+    Index node = ReadIndex(IndexLeaf);
+
+    if(node.isLeaf){
+        fstream DataPage; DataPage.open(filename, ios::binary);
+
+        Record keyRecord; int IndexKeyRecord;
+        string key; string NewKey = string(NuevoRegistro.data[KEY_INDEX]);
+
+        int PosSaveKey, IndexSaveRecord;
+        for(IndexSaveRecord = 0; IndexSaveRecord < node.nRegistros; IndexSaveRecord++){
+            IndexKeyRecord = node.posBuckets[IndexSaveRecord];
+            DataPage.seekg(IndexKeyRecord); DataPage.read((char *)&keyRecord, sizeof(keyRecord));
+            key = string(keyRecord.data[KEY_INDEX]);
+            if(NewKey < key){
+                PosSaveKey = node.posHijos[i]//Insertar izquierda;
+            }
+        }
+
+        PageRecord Bucket; 
+        DataPage.seekg(PosSaveKey); DataPage.read((char *)&Bucket, sizeof(Bucket));
+
+        if(Bucket.nRegistros == PAGE_SIZE){
+            PageRecord NewBucket;
+            for(int i = PAGE_SIZE/2; i < PAGE_SIZE; i++){
+                NewBucket.registros[i] = Bucket[i];
+                Bucket[i] = Record();
+            }
+            Bucket.nRegistros = PAGE_SIZE/2; NewBucket.nRegistros = PAGE_SIZE - Bucket.nRegistros;
+            NewBucket.next = Bucket.next; NewBucket.prev = PosSaveKey;
+            int PosNewPage = freeList[freeList.size() - 1]; Bucket.next = PosNewPage;
+            DataPage.seekp(PosSaveKey); DataPage.write((char *)&Bucket, sizeof(PageRecord));
+            DataPage.seekp(PosNewPage); DataPage.write((char *)&NewBucket, sizeof(PageRecord));
+            AjustarFreeList();
+            int NewSaveKey = NewBucket.registros[0].data[KEY_INDEX];
+
+            if(node.nRegistros)
+            for(int i = 0; i < IndexSaveRecord; i++){
+                ;
+            }
+        }
+
+
+        DataPage.close();
+
+    }
+
+
+    string value = string(NuevoRegistro.data[KEY_INDEX]);
+    
+    
+    if (ORDER == node.nRegistros) {
+        Index temp; int posTemp;
+        pair<int, Index> InfoTemp = SplitRoot(0, node);
+        posTemp = InfoTemp.first; temp = InfoTemp.second;
+        InsertNonFullNode(posTemp, temp, NuevoRegistro);
+    } else {
+        InsertNonFullNode(0, node, NuevoRegistro);
+    }
+};
+
 void BPlusTree::ReadValues(){
     Index node = ReadIndex(pos_root);
     string value; 
