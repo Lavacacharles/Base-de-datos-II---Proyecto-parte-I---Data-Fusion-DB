@@ -22,7 +22,7 @@ estructurados, incluyendo documentos textuales en principio para luego incluir o
 - Implementación de un mini gestor de base de datos optimizado para la gestión de la información.
 - Aplicación y comparación en tiempos de ejecución entre cada técnica de organización e indexación de archivos físicos.
 ***
-# Técnicas de indexacción y Organización de Archivos
+# Técnicas de indexación y Organización de Archivos
 Para la gestión de los archivos físicos, se eligieron 3 estrategias para la organización de archivos e índices.
 - ***AVL File*** 
 - ***B+Tree Indexing***
@@ -33,7 +33,7 @@ Un AVL File es una estructura de datos que implementa un árbol AVL (Adelson-Vel
 organizar archivos en memoria secundaria (como discos duros) de manera eficiente. Un árbol AVL es
 un tipo de árbol binario de búsqueda que se mantiene balanceado mediante la aplicación de rotaciones
 después de cada operación de inserción o eliminación, garantizando un tiempo de acceso logarítmico 
-*$O(log$ $n)$* en las operaciones de búsqueda, inserción y eliminación.
+$O(log n)$ en las operaciones de búsqueda, inserción y eliminación.
 
 > [!IMPORTANT]
 > Se optimizó los inserts y removes implementando un FreeList LIFO
