@@ -16,28 +16,26 @@
 
 using namespace std;
 
-inline std::string operator+(const std::string& str, const char* arr_char) {
-    return str + std::string(arr_char);
+inline string operator+(const string& str, const char* arr_char) {
+    return str + string(arr_char);
 }
-inline std::string operator+(const char* arr_char, const std::string& str) {
-    return std::string(arr_char) + str;
+inline string operator+(const char* arr_char, const string& str) {
+    return string(arr_char) + str;
 }
 template<class T>
 string concatenate(T char1, const char* arr_char2) {
-    if constexpr (std::is_same<T, char*>::value) {
+    if constexpr (is_same<T, char*>::value) {
         return char1 + string(arr_char2);
     }
-    // Si el tipo es un entero
-    else if constexpr (std::is_same<T, int>::value) {
+    else if constexpr (is_same<T, int>::value) {
         return to_string(char1) + string(arr_char2);
     }
-    // Si el tipo es un float
-    else if constexpr (std::is_same<T, float>::value) {
-        return to_string(char1) + string(arr_char2);// Retorna el valor ASCII como float
+    else if constexpr (is_same<T, float>::value) {
+        return to_string(char1) + string(arr_char2);
     }
-    // Si el tipo es un string
-    else if constexpr (std::is_same<T, std::string>::value) {
-        return char1+string(arr_char2); // Convierte el char a string
+
+    else if constexpr (is_same<T, string>::value) {
+        return char1+string(arr_char2);
     }
     else {
         throw std::invalid_argument("Tipo no soportado");
@@ -46,10 +44,10 @@ string concatenate(T char1, const char* arr_char2) {
 
 template<class T>
 string convertToString (T input) {
-    if constexpr (std::is_same<T, int>::value) {
+    if constexpr (is_same<T, int>::value) {
         return to_string(input);
     }
-    else if constexpr (std::is_same<T, string>::value) {
+    else if constexpr (is_same<T, string>::value) {
         return input;
     }
     else {
@@ -59,10 +57,10 @@ string convertToString (T input) {
 
 template<class T>
 T convert (string input) {
-    if constexpr (std::is_same<T, int>::value) {
+    if constexpr (is_same<T, int>::value) {
         return atoi(input.c_str());
     }
-    else if constexpr (std::is_same<T, string>::value) {
+    else if constexpr (is_same<T, string>::value) {
         return string(input);
     }
     else {
@@ -71,10 +69,10 @@ T convert (string input) {
 }
 
 bool operator>(const string& str, const char* charArray) {
-    return str > string(charArray); // Convertir char[] a std::string y comparar
+    return str > string(charArray);
 }
 bool operator<(const string& str, const char* charArray) {
-    return str < string(charArray); // Convertir char[] a std::string y comparar
+    return str < string(charArray);
 }
 
 template<class R,class T>
@@ -461,10 +459,7 @@ public:
     }
 
     bool add(R record) {
-        auto start = chrono::high_resolution_clock::now();
         auto root = insert(head.root, record);
-        auto end = chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
         if(root.first) {
             HeadAVL nodeRoot = read<HeadAVL>(0);
             if (head.root != root.second || head.nextDel != nodeRoot.nextDel) {
