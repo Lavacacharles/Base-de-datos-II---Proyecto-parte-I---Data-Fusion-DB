@@ -30,7 +30,7 @@ const int Default_D = 3;
 // The key needs to be a int because of the hashing function. Before bitset was
 // used and it works with string, but it needs a constant as limit. External
 // package booster can be used to fix this, but is not implemetned
-class ExtendibleHashingFile : public FileParent {
+class ExtendibleHashingFile : public FileParent<int> {
 private:
   string index_name;
   // The factor de bloque and profundidad global could be accesses with a field
@@ -354,7 +354,6 @@ public:
     this->index_name = file_name + "_index";
     this->factor = f;
     this->depth = d;
-    this->record_size = 0;
 
     vector<vector<string>> dataframe;
     vector<int> sizes;
@@ -385,7 +384,7 @@ public:
         }
         i++;
       }
-      this->insert_parsed(record);
+      this->add_parsed(record);
     }
   }
   virtual ~ExtendibleHashingFile() {}
@@ -432,11 +431,9 @@ public:
     return in_range;
   }
 
-  bool insert(string record) {
-    return insert_parsed(this->separate_record(record));
-  }
+  bool add(string record) { return add_parsed(this->separate_record(record)); }
 
-  bool insert_parsed(string record) {
+  bool add_parsed(string record) {
     // 1. Find bucket
     cout << "---------------------------------------------------" << endl;
     string temp_key = record.substr(0, this->get_field_size(0));

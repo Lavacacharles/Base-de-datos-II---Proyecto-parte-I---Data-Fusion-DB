@@ -5,18 +5,20 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <numeric>
 #include <sstream>
 #include <string>
 #include <vector>
 
 using namespace std;
 
-class FileParent {
+template <class TK = int> class FileParent {
 protected:
   string data_name;
   string header_name;
 
   int record_size;
+  int key_size;
   // helper functions
 
   int get_header_name_size() {
@@ -85,17 +87,21 @@ public:
     this->data_name = file_name + "_data";
     this->header_name = file_name + "_header";
     this->record_size = this->get_record_size();
+    this->key_size = this->get_field_size(0);
   }
   FileParent(string file_name, string csv_file) {
     this->data_name = file_name + "_data";
     this->header_name = file_name + "_header";
     this->record_size = 0;
+    this->key_size = 0;
   }
   virtual ~FileParent() {}
 
-  virtual string search(int key) = 0;
+  virtual bool add(string record) = 0;
 
-  virtual vector<string> range_search(int start_key, int end_key) = 0;
+  virtual string search(TK key) = 0;
+
+  virtual vector<string> range_search(TK start_key, TK end_key) = 0;
 
   virtual bool remove(int key) = 0;
 
@@ -153,6 +159,9 @@ public:
       header_file.write((char *)&sizes[i], sizeof(int));
     }
     header_file.close();
+
+    this->record_size = accumulate(sizes.begin(), sizes.end(), 0);
+    this->key_size = sizes[0];
 
     return true;
   }
