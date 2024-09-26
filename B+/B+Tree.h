@@ -42,9 +42,14 @@ struct Record {
 };
 
 
-struct Bucket{
+struct PageRecord{
+    int next;
+    int prev;
+    int nRegistros;
     Record registros[ORDER];
 };
+
+
 
 
 struct Index {
@@ -84,8 +89,8 @@ struct BPlusTree{
     void WriteRecord(int, Record);
     Record ReadRecord(int);
 
-    void WriteBucket(int,Bucket);
-    Bucket ReadBucket(int);
+    void WriteBucket(int, PageRecord);
+    PageRecord ReadBucket(int);
     Record* ReadListRecord(int,int[]);
 
     void SplitChild(int,Index,int);
@@ -95,5 +100,6 @@ struct BPlusTree{
     void Insert(Record NuevoRegistro);
     void Search(){}
     void Eliminate(){}
-    void ReadCSV(string filename, int nelements, BPlusTree tree);
+    void ReadCSV(string filename, int nelements);
+    void ReadValues();
 };
