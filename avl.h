@@ -465,28 +465,6 @@ public:
     }
   }
 
-  bool add(string recordS) {
-    istringstream lineStream(recordS);
-    string line, id = "", field;
-    string data = "";
-    int count = 0;
-    while (getline(lineStream, field, ',')) {
-      if (count == 0) {
-        id = field;
-      } else {
-        if (data != "")
-          data += ",";
-        data += field;
-      }
-
-      count++;
-    }
-    if (data != "" || id != "") {
-      R record(id, data.c_str());
-      this->add(record);
-    }
-  }
-
   bool add(R record) {
     auto root = insert(head.root, record);
     if (root.first) {
@@ -501,6 +479,19 @@ public:
     cout << (root.first ? "Insercion correcta del " : "Ya existe el ")
          << "registro con key(" << record.getKey() << ")\n";
     return root.first;
+  }
+
+  bool add(string record) {
+    return true;
+  };
+
+  string find(T key) {
+    return "";
+  };
+
+  vector<string> range_search(T start_key, T end_key) {
+    vector<string> result;
+    return result;
   }
 
   bool remove(T key) {
@@ -519,10 +510,6 @@ public:
     return root.first;
   }
 
-  string find(T key) {
-    // TODO
-    // read from output file
-  }
 
   R search(T key) {
     auto result = search(head.root, key);
@@ -534,10 +521,6 @@ public:
     cout << endl;
 
     return result.second;
-  }
-  vector<string> range_search(T keyMin, T keyMax) {
-    // TODO
-    // Read from file
   }
 
   vector<R> rangeSearch(T keyMin, T keyMax) {
