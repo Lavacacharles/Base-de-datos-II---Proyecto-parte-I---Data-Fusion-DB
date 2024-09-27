@@ -128,13 +128,13 @@ Búsqueda en BST
 ### Evolución de tiempos de ejecución
 
 
-| ms          | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M |
-|-------------|------|-------|------|-------|-------|-------|
-| buildTable  |      |       |      |       |       |       |
-| add         |      |       |      |       |       |       |
-| remove      |      |       |      |       |       |       |
-| search      |      |       |      |       |       |       |
-| rangeSearch |      |       |      |       |       |       |
+| seg         | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M(aprox) |
+|-------------|------|-------|------|-------|--------|-------------|
+| buildTable  |0.383 |7.989  |122.22|1556.27|17735.63|201655.4     |
+| add         |0.023 |0.083  |0.196 |0.204  |0.25    |0.31         |
+| remove      |0.001 |0.001  |0.002 |0.002  |0.002   |0.002        |
+| search      |0.001 |0.011  |0.097 |1.011  |7.28    |19.03        |
+| rangeSearch |0.013 |0.087  |0.138 |0.154  |0.22    |0.27         |
 
 
 ## B+Tree Indexing
@@ -165,11 +165,11 @@ algoritmo.
 
 #### Tiempos de ejecución
 
-| buildFromFile      | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M |
-|--------------------|------|-------|------|-------|-------|-------|
-| AVLFile            |      |       |      |       |       |       |
-| B+Tree             |      |       |      |       |       |       |
-| Extendible Hashing |      |       |      |       |       |       |
+| buildFromFile      | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M(aprox)|
+|--------------------|------|-------|------|-------|--------|------------|
+| AVLFile            |0.383 |7.989  |122.22|1556.27|17735.63|201655.4    |
+| B+Tree             |      |       |      |       |        |            |
+| Extendible Hashing |      |       |      |       |        |            |
 
 #### Gráfica de complejidades
 
@@ -183,11 +183,11 @@ algoritmo.
 ### Insertar registro
 #### Tiempos de ejecución
 
-| add                | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M |
-|--------------------|------|-------|------|-------|-------|-------|
-| AVLFile            |      |       |      |       |       |       |
-| B+Tree             |      |       |      |       |       |       |
-| Extendible Hashing |      |       |      |       |       |       |
+| add                | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M        |
+|--------------------|------|-------|------|-------|--------|-------------|
+| AVLFile            |0.023 |0.083  |0.196 |0.204  |0.25    |0.31         |
+| B+Tree             |      |       |      |       |        |             |
+| Extendible Hashing |      |       |      |       |        |             |
 
 #### Gráfica de complejidades
 
@@ -201,11 +201,11 @@ algoritmo.
 ### Eliminar registro
 #### Tiempos de ejecución
 
-| remove             | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M |
-|--------------------|------|-------|------|-------|-------|-------|
-| AVLFile            |      |       |      |       |       |       |
-| B+Tree             |      |       |      |       |       |       |
-| Extendible Hashing |      |       |      |       |       |       |
+| remove             | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M(aprox) |
+|--------------------|------|-------|------|-------|--------|-------------|
+| AVLFile            |0.001 |0.001  |0.002 |0.002  |0.002   |0.002        |
+| B+Tree             |      |       |      |       |        |             |
+| Extendible Hashing |      |       |      |       |        |             |
 
 #### Gráfica de complejidades
 
@@ -219,11 +219,11 @@ algoritmo.
 ### Búsqueda de registro
 #### Tiempos de ejecución
 
-| search             | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M |
-|--------------------|------|-------|------|-------|-------|-------|
-| AVLFile            |      |       |      |       |       |       |
-| B+Tree             |      |       |      |       |       |       |
-| Extendible Hashing |      |       |      |       |       |       |
+| search             | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M(aprox) |
+|--------------------|------|-------|------|-------|--------|-------------|
+| AVLFile            |0.001 |0.011  |0.097 |1.011  |7.28    |19.03        |
+| B+Tree             |      |       |      |       |        |             |
+| Extendible Hashing |      |       |      |       |        |             |
 
 #### Gráfica de complejidades
 
@@ -237,11 +237,11 @@ algoritmo.
 ### Búsqueda por rango
 #### Tiempos de ejecución
 
-| rangeSearch        | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M |
-|--------------------|------|-------|------|-------|-------|-------|
-| AVLFile            |      |       |      |       |       |       |
-| B+Tree             |      |       |      |       |       |       |
-| Extendible Hashing |      |       |      |       |       |       |
+| rangeSearch        | N=10 | N=100 | N=1K | N=10K | N=100K | N=1M(aprox |
+|--------------------|------|-------|------|-------|--------|------------|
+| AVLFile            |0.013 |0.087  |0.138 |0.154  |0.22    |0.27        |
+| B+Tree             |      |       |      |       |        |            |
+| Extendible Hashing |      |       |      |       |        |            |
 
 #### Gráfica de complejidades
 
