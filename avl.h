@@ -370,7 +370,7 @@ template <class R, class T> class AVLFile : public FileParent<T> {
     return make_pair(true, nodeRoot.data);
   }
 
-  void rangeSearch(long posRoot, T keyMin, T keyMax, vector<R> &result) {
+  void rangeSearch(long posRoot, T keyMin, T keyMax, vector<string> &result) {
     if (posRoot == -1)
       return;
     NodeAVL<R, T> nodeRoot = read<NodeAVL<R, T>>(getPosFisical<R, T>(posRoot));
@@ -378,7 +378,7 @@ template <class R, class T> class AVLFile : public FileParent<T> {
       rangeSearch(nodeRoot.left, keyMin, keyMax, result);
 
     if (keyMin <= nodeRoot.getKey() && nodeRoot.getKey() <= keyMax)
-      result.push_back(nodeRoot.data);
+      result.push_back(nodeRoot.data.getData());
 
     if (keyMax > nodeRoot.getKey())
       rangeSearch(nodeRoot.right, keyMin, keyMax, result);
@@ -497,9 +497,11 @@ public:
         rewriteHead();
       }
     }
+    /*
     writeOutputFile(root.first);
     cout << (root.first ? "Insercion correcta del " : "Ya existe el ")
          << "registro con key(" << record.getKey() << ")\n";
+    */
     return root.first;
   }
 
@@ -513,9 +515,11 @@ public:
         rewriteHead();
       }
     }
+    /*
     writeOutputFile(root.first);
     cout << (root.first ? "Eliminacion correcta del " : "No se encontro el ")
          << "registro con key(" << key << ")\n";
+    */
     return root.first;
   }
 
@@ -524,26 +528,29 @@ public:
     // read from output file
   }
 
-  R search(T key) {
+  string search(T key) {
     auto result = search(head.root, key);
+    /*
     writeOutputFile(result.second, result.first);
     cout << ((result.first) ? "Registro encontrado"
                             : "No se encontró el registro")
          << "con key(" << key << "):\n";
     result.second.show();
     cout << endl;
+    */
 
-    return result.second;
+    return result.second.getData();
   }
+
   vector<string> range_search(T keyMin, T keyMax) {
     // TODO
     // Read from file
   }
 
-  vector<R> rangeSearch(T keyMin, T keyMax) {
-    vector<R> result;
+  vector<string> rangeSearch(T keyMin, T keyMax) {
+    vector<string> result;
     rangeSearch(head.root, keyMin, keyMax, result);
-
+  /*
     bool state = (!result.empty()) ? true : false;
     writeOutputFile(result, state);
 
@@ -556,7 +563,7 @@ public:
     } else
       cout << "No se encontraron registros en el rango [" << keyMin << ", "
            << keyMax << "].\n";
-
+  */
     return result;
   }
 };
