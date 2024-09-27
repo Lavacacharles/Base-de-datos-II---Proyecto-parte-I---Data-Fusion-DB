@@ -30,7 +30,7 @@ const int Default_D = 3;
 // The key needs to be a int because of the hashing function. Before bitset was
 // used and it works with string, but it needs a constant as limit. External
 // package booster can be used to fix this, but is not implemetned
-class ExtendibleHashingFile : public FileParent {
+class ExtendibleHashingFile : public FileParent<int> {
 private:
   string index_name;
   // The factor de bloque and profundidad global could be accesses with a field
@@ -39,10 +39,10 @@ private:
   int depth;
 
   // helper functions
-  int create_bucket(string code, int size, int ld, int pointer,
+  int create_bucket(string code, int size, int ld, long int pointer,
                     string records) {
     // there is a free bucket, so lets use it
-    int pos_bucket = 0;
+    long int pos_bucket = 0;
     if (this->get_top_free_list() == -1) {
       ofstream data_file(this->data_name, ios::app | ios::binary);
       if (!data_file.is_open())
@@ -63,19 +63,20 @@ private:
       data_file.write(reinterpret_cast<const char *>(&ld), sizeof(int));
 
       // Inserting pointer
-      data_file.write(reinterpret_cast<const char *>(&pointer), sizeof(int));
+      data_file.write(reinterpret_cast<const char *>(&pointer),
+                      sizeof(long int));
 
       // The space not used is filled with weird things after nth value of
       // string
       data_file.write(records.c_str(),
-                      sizeof(char) * this->get_record_size() * factor);
+                      sizeof(char) * this->record_size * factor);
 
       data_file.close();
 
       pos_bucket = this->get_number_buckets() - 1;
     } else {
       // 1. Get pointer that is at the top of the free list
-      int top = this->get_top_free_list();
+      long int top = this->get_top_free_list();
       // 2. Get pointer of aimed bucket to pass it into the top
       int new_top = this->get_pointer_free_list(top);
       // 3. Overwrite in free space
@@ -96,12 +97,13 @@ private:
       data_file.write(reinterpret_cast<const char *>(&ld), sizeof(int));
 
       // Inserting pointer
-      data_file.write(reinterpret_cast<const char *>(&pointer), sizeof(int));
+      data_file.write(reinterpret_cast<const char *>(&pointer),
+                      sizeof(long int));
 
       // The space not used is filled with weird things after nth value of
       // string
       data_file.write(records.c_str(),
-                      sizeof(char) * this->get_record_size() * factor);
+                      sizeof(char) * this->record_size * factor);
 
       data_file.close();
 
@@ -116,11 +118,11 @@ private:
   }
 
   int get_bucket_size() {
-    return this->depth * sizeof(char) + sizeof(int) * 3 +
-           this->get_record_size() * this->factor;
+    return this->depth * sizeof(char) + sizeof(int) * 2 + sizeof(long int) +
+           this->record_size * this->factor;
   }
 
-  void overwrite_bucket(Bucket *bucket, int pos_bucket) {
+  void overwrite_bucket(Bucket *bucket, long int pos_bucket) {
     ofstream data_file(data_name, ios::in | ios::binary);
     if (!data_file.is_open())
       throw("No se pudo abrir el archivo");
@@ -138,25 +140,26 @@ private:
     data_file.write(reinterpret_cast<const char *>(&ld), sizeof(int));
 
     // Inserting pointer
-    int pointer = bucket->get_pointer();
-    data_file.write(reinterpret_cast<const char *>(&pointer), sizeof(int));
+    long int pointer = bucket->get_pointer();
+    data_file.write(reinterpret_cast<const char *>(&pointer), sizeof(long int));
 
     // // The space not used is filled with weird things after th value of
     // string
     data_file.write(bucket->get_all_records().c_str(),
-                    sizeof(char) * this->get_record_size() * factor);
+                    sizeof(char) * this->record_size * factor);
 
     data_file.close();
   }
 
-  void overwrite_pointer(int pos, int new_pointer) {
+  void overwrite_pointer(long int pos, long int new_pointer) {
     ofstream index_file(index_name, ios::in | ios::binary);
     if (!index_file.is_open())
       throw("No se pudo abrir el archivo");
 
-    index_file.seekp(sizeof(int) * 3 + pos * sizeof(int),
+    index_file.seekp(sizeof(int) * 2 + sizeof(long int) +
+                         pos * sizeof(long int),
                      ios::beg); // fixed length record
-    index_file.write((char *)&new_pointer, sizeof(int));
+    index_file.write((char *)&new_pointer, sizeof(long int));
   }
 
   // Helper function to obtain the pointer associated to a position
@@ -166,9 +169,9 @@ private:
       throw("No se pudo abrir el archivo");
 
     int tmp;
-    file.seekg(sizeof(int) * 3 + pos * sizeof(int),
+    file.seekg(sizeof(int) * 2 + sizeof(long int) + pos * sizeof(long int),
                ios::beg); // fixed length record
-    file.read((char *)&tmp, sizeof(int));
+    file.read((char *)&tmp, sizeof(long int));
     return tmp;
   }
 
@@ -195,7 +198,7 @@ private:
   }
 
   // Helper function to obtain bucket size
-  Bucket *get_bucket(int pos) {
+  Bucket *get_bucket(long int pos) {
     ifstream data_file(this->data_name, ios::binary);
     if (!data_file.is_open())
       throw("No se pudo abrir el archivo");
@@ -211,8 +214,8 @@ private:
     int local_depth;
     data_file.read((char *)&local_depth, sizeof(int));
 
-    int pointer;
-    data_file.read((char *)&pointer, sizeof(int));
+    long int pointer;
+    data_file.read((char *)&pointer, sizeof(long int));
 
     char *records = new char[this->record_size * this->factor];
     data_file.read(records, sizeof(char) * this->record_size * this->factor);
@@ -233,14 +236,14 @@ private:
     // First the factor, then the depth, finally the pointer to the free bucket
     file.write((char *)&this->factor, sizeof(int));
     file.write((char *)&this->depth, sizeof(int));
-    int temp = -1;
-    file.write((char *)&temp, sizeof(int));
+    long int temp = -1;
+    file.write((char *)&temp, sizeof(long int));
 
     // Puts all codes with their associated pointers
     // We start with 2 buckets
     for (int i = 0; i < pow(2, this->depth); i++) {
       string binary_code = hash_func(i);
-      int pos;
+      long int pos;
       if (*(binary_code.end() - 1) == '0') {
         pos = 0;
       } else {
@@ -250,7 +253,7 @@ private:
       // it can be done internally because it's sorted
       //
       // file.write((char *)&binary_code, binary_code.size());
-      file.write((char *)&pos, sizeof(int));
+      file.write((char *)&pos, sizeof(long int));
     }
   }
 
@@ -301,26 +304,26 @@ private:
     return tmp;
   }
 
-  int get_top_free_list() {
+  long int get_top_free_list() {
     ifstream file(index_name, ios::in | ios::binary);
     if (!file.is_open())
       throw("No se pudo abrir el archivo");
     file.seekg(sizeof(int) * 2,
                ios::beg); // fixed length record
 
-    int tmp;
-    file.read((char *)&tmp, sizeof(int));
+    long int tmp;
+    file.read((char *)&tmp, sizeof(long int));
     return tmp;
   }
 
-  void change_top_free_list(int new_top) {
+  void change_top_free_list(long int new_top) {
     ofstream file(index_name, ios::in | ios::binary);
     if (!file.is_open())
       throw("No se pudo abrir el archivo");
     file.seekp(sizeof(int) * 2,
                ios::beg); // fixed length record
 
-    file.write((char *)&new_top, sizeof(int));
+    file.write((char *)&new_top, sizeof(long int));
   }
 
   int get_number_buckets() {
@@ -354,19 +357,19 @@ public:
     this->index_name = file_name + "_index";
     this->factor = f;
     this->depth = d;
-    this->record_size = 0;
 
     vector<vector<string>> dataframe;
     vector<int> sizes;
 
-    this->create_from_csv(csv_file, dataframe, sizes);
+    this->create_from_csv(csv_file, dataframe, sizes, 0);
 
     // 3. Create index from the fields
     this->create_index();
+
     // clean file
     ofstream data_file(this->data_name, ios::out | ios::binary | ios::trunc);
     data_file.close();
-    this->record_size = this->get_record_size();
+    this->record_size = this->record_size;
     create_bucket("0", 0, 1, -1, "");
     create_bucket("1", 0, 1, -1, "");
 
@@ -390,7 +393,7 @@ public:
   }
   virtual ~ExtendibleHashingFile() {}
 
-  string search(int key) {
+  string find(int key) {
     // TK is a template parameter but it is treated internally as a string.
     // Might be better to receive a string directly
 
@@ -406,9 +409,9 @@ public:
       string record = "";
       // 4. Go to current bucket to search for key over all the records
       for (int i = 0; i < bucket->get_size(); i++) {
-        record = bucket->get_record(i, this->get_record_size());
+        record = bucket->get_record(i, this->record_size);
         // Remember, we are assuming that the key is the first field
-        current_key = record.substr(0, this->get_field_size(0));
+        current_key = record.substr(0, this->key_size);
         if (stoi(current_key) == key) {
           return record;
         }
@@ -427,45 +430,46 @@ public:
   vector<string> range_search(int start_key, int end_key) {
     vector<string> in_range;
     for (int i = start_key; i < end_key; i++) {
-      in_range.push_back(this->search(i));
+      in_range.push_back(this->find(i));
     }
     return in_range;
   }
 
-  bool insert(string record) {
+  bool add(string record) {
     return insert_parsed(this->separate_record(record));
   }
 
   bool insert_parsed(string record) {
     // 1. Find bucket
-    cout << "---------------------------------------------------" << endl;
-    string temp_key = record.substr(0, this->get_field_size(0));
-    int key = stoi(record.substr(0, this->get_field_size(0)));
-    cout << "key: " << key << endl;
-    cout << "binary key: " << hash_func(key) << endl;
+    // cout << "---------------------------------------------------" << endl;
+    string temp_key = record.substr(0, this->key_size);
+    int key = stoi(record.substr(0, this->key_size));
+    // cout << "key: " << key << endl;
+    // cout << "binary key: " << hash_func(key) << endl;
     int pos_header = get_pointer_key(key);
-    cout << "pos_header: " << pos_header << endl;
+    // cout << "pos_header: " << pos_header << endl;
     int pointer = get_index_pointer(pos_header);
-    cout << "pointer: " << pointer << endl;
+    // cout << "pointer: " << pointer << endl;
     Bucket *bucket = get_bucket(pointer);
-    cout << bucket->get_code() << endl;
-    cout << bucket->get_size() << endl;
-    cout << bucket->get_local() << endl;
-    cout << bucket->get_pointer() << endl;
-    cout << bucket->get_all_records() << endl;
-    cout << "---------------------------------------------------" << endl;
+    // cout << bucket->get_code() << endl;
+    // cout << bucket->get_size() << endl;
+    // cout << bucket->get_local() << endl;
+    // cout << bucket->get_pointer() << endl;
+    // cout << bucket->get_all_records() << endl;
+    // cout << "---------------------------------------------------" << endl;
     // 2. Check if bucket has space
     if (bucket->get_size() < this->factor) {
       // 2.1 If it does, just insert
-      cout << "normal insert with space" << endl;
+      // cout << "normal insert with space" << endl;
       string all_records = bucket->get_all_records();
       all_records = all_records + record;
-      bucket->change_records(all_records, this->record_size);
+      bucket->change_records(all_records, this->record_size, this->factor);
       bucket->change_size(bucket->get_size() + 1);
       this->overwrite_bucket(bucket, pointer);
     } else {
       if (bucket->get_local() < this->depth) {
-        cout << "Partition" << endl;
+        // cout << "Partition" << endl;
+
         // 2.2 Divide elements of the bucket.
         string records_0 = "";
         string records_1 = "";
@@ -477,12 +481,15 @@ public:
           records_1 += record;
         }
 
+        // cout << "Bucket size:" << bucket->get_size() << endl;
         for (int i = 0; i < bucket->get_size(); i++) {
           string current_record = bucket->get_record(i, this->record_size);
-          cout << current_record << endl;
-          cout << this->get_field_size(0) << endl;
-          key = stoi(current_record.substr(0, this->get_field_size(0)));
+          // cout << current_record << endl;
+          // cout << "Key in string:" << current_record.substr(0,
+          // this->key_size) << endl;
+          key = stoi(current_record.substr(0, this->key_size));
           string binary_key = this->hash_func(key);
+          // cout << "Binary key:" << binary_key << endl;
           if (binary_key[this->depth - bucket->get_local() - 1] == '0') {
             records_0 += current_record;
           } else {
@@ -490,47 +497,79 @@ public:
           }
         }
 
-        // Check what happens if it doesn't work and the amount of records keeps
-        // surpasing the factor
-        // TODO
-        int bucket_pos =
-            this->create_bucket("1" + bucket->get_code(),
-                                records_1.size() / this->get_record_size(),
-                                bucket->get_local() + 1, -1, records_1);
+        if ((records_0.size() / this->record_size > this->factor)) {
+          // Redo the breaking for record 0 by recursion
+          int bucket_pos = this->create_bucket(
+              "1" + bucket->get_code(), records_1.size() / this->record_size,
+              bucket->get_local() + 1, -1, records_1);
 
-        // Change pointers of headers.
-        redirect_index(bucket_pos, "1" + bucket->get_code());
-        // Change current bucket to have "0"
-        bucket->change_records(records_0, this->get_record_size());
-        bucket->change_size(records_0.size() / this->get_record_size());
-        bucket->change_code("0" + bucket->get_code(), this->depth);
-        bucket->change_local(bucket->get_local() + 1);
-        // Pointer doesn't needs to be changed
-        this->overwrite_bucket(bucket, pointer);
+          // Change pointers of headers.
+          redirect_index(bucket_pos, "1" + bucket->get_code());
 
+          // Records are the same
+          bucket->change_code("0" + bucket->get_code(), this->depth);
+          bucket->change_local(bucket->get_local() + 1);
+          // Pointer doesn't needs to be changed
+          this->overwrite_bucket(bucket, pointer);
+          // Recursive call to delegate problem
+          return this->insert_parsed(record);
+        } else if ((records_1.size() / this->record_size > this->factor)) {
+          // Redo the breaking for record 1 by recursion
+          int bucket_pos = this->create_bucket(
+              "1" + bucket->get_code(), bucket->get_size(),
+              bucket->get_local() + 1, -1, bucket->get_all_records());
+
+          // Change pointers of headers.
+          redirect_index(bucket_pos, "1" + bucket->get_code());
+
+          // Records are the same
+          bucket->change_code("0" + bucket->get_code(), this->depth);
+          bucket->change_size(records_0.size() / this->record_size);
+          bucket->change_records(records_0, this->record_size, this->factor);
+          bucket->change_local(bucket->get_local() + 1);
+          this->overwrite_bucket(bucket, pointer);
+
+          // Recursive call to delegate problem
+          return this->insert_parsed(record);
+
+        } else {
+          int bucket_pos = this->create_bucket(
+              "1" + bucket->get_code(), records_1.size() / this->record_size,
+              bucket->get_local() + 1, -1, records_1);
+
+          // Change pointers of headers.
+          redirect_index(bucket_pos, "1" + bucket->get_code());
+          // Change current bucket to have "0"
+          bucket->change_records(records_0, this->record_size, this->factor);
+          bucket->change_size(records_0.size() / this->record_size);
+          bucket->change_code("0" + bucket->get_code(), this->depth);
+          bucket->change_local(bucket->get_local() + 1);
+          // Pointer doesn't needs to be changed
+          this->overwrite_bucket(bucket, pointer);
+        }
       } else {
         // 2.3 If dividing isn't possible, change pointer of bucket to a new
         // bucket and insert there
         // Travel to end of chain
-        cout << "Chain" << endl;
+        // cout << "Chain" << endl;
         while (true) {
           if (bucket->get_size() < this->factor) {
-            cout << "Chained with space: " << bucket->get_pointer() << endl;
+            // cout << "Chained with space: " << bucket->get_pointer() << endl;
             string records = bucket->get_all_records();
             records += record;
-            bucket->change_size(records.size() / this->get_record_size());
-            bucket->change_records(records, this->get_record_size());
+            bucket->change_size(records.size() / this->record_size);
+            bucket->change_records(records, this->record_size, this->factor);
             this->overwrite_bucket(bucket, pointer);
             break;
           } else if (bucket->get_pointer() == -1) {
-            cout << "There is no chained" << bucket->get_pointer() << endl;
-            int bucket_pos = this->create_bucket(
+            // cout << "There is no chained: " << bucket->get_pointer() << endl;
+            long int bucket_pos = this->create_bucket(
                 bucket->get_code(), 1, bucket->get_local(), -1, record);
             bucket->change_pointer(bucket_pos);
             this->overwrite_bucket(bucket, pointer);
             break;
           } else {
-            cout << "Move to next bucket" << bucket->get_pointer() << endl;
+            // cout << "Move to next bucket: " << bucket->get_pointer() << endl;
             pointer = bucket->get_pointer();
             delete bucket;
             bucket = this->get_bucket(pointer);
@@ -548,27 +587,28 @@ public:
     // combine the empty bucket with it's predecesor
 
     // 1. Find bucket
-    cout << "---------------------------------------------------" << endl;
+    // cout << "---------------------------------------------------" << endl;
     int pos_header = get_pointer_key(key);
-    cout << "key: " << key << endl;
-    cout << "binary key: " << hash_func(key) << endl;
+    // cout << "key: " << key << endl;
+    // cout << "binary key: " << hash_func(key) << endl;
     int pointer = get_index_pointer(pos_header);
-    cout << "pointer: " << pointer << endl;
+    // cout << "pointer: " << pointer << endl;
     Bucket *bucket = get_bucket(pointer);
-    cout << "---------------------------------------------------" << endl;
+    // cout << "---------------------------------------------------" << endl;
     // 2. Check if record is in bucket
     bool found = false;
+    string prev_records = "";
     while (true) {
-      cout << "current bucket: " << endl;
-      cout << bucket->get_code() << endl;
-      cout << bucket->get_size() << endl;
-      cout << bucket->get_local() << endl;
-      cout << bucket->get_pointer() << endl;
-      cout << "---------------------------------------------------" << endl;
-      string prev_records = "";
+      // cout << "current bucket: " << endl;
+      // cout << bucket->get_code() << endl;
+      // cout << bucket->get_size() << endl;
+      // cout << bucket->get_local() << endl;
+      // cout << bucket->get_pointer() << endl;
+      // cout << "---------------------------------------------------" << endl;
+      prev_records = "";
       for (int i = 0; i < bucket->get_size(); i++) {
-        string record = bucket->get_record(i, this->get_record_size());
-        string current_key = record.substr(0, this->get_field_size(0));
+        string record = bucket->get_record(i, this->record_size);
+        string current_key = record.substr(0, this->key_size);
         if (stoi(current_key) == key) {
           found = true;
         } else {
@@ -576,110 +616,7 @@ public:
         }
       }
       if (found == true) {
-        cout << "Found key" << endl;
-        // Use move to last to move the last record in case there is a next
-        // pointer
-        // If this activates, it means that the pointed bucket is last, so there
-        // is no momvement to next bucket
-        // However, we must check if it's empty and the "sibling", has space to
-        // combine them
-        if (bucket->get_pointer() == -1) {
-          // Could be changed to be activated at half capacity or something like
-          // that. Would require changes in the merging
-          if (bucket->get_size() == 1 &&
-              get_index_pointer(pos_header) == pointer) {
-            // must check if can be combined with sibling in the case we are
-            // first.
-            // Find sibling
-            string binary_sibling = (bucket->get_code()[0] == '0' ? "1" : "0");
-            binary_sibling +=
-                bucket->get_code().substr(1, bucket->get_code().size() - 1);
-            // Find bucket of sibling
-            int sibling_pointer =
-                get_index_pointer(stoi(binary_sibling, nullptr, 2));
-            Bucket *sibling_bucket = get_bucket(sibling_pointer);
-            if (sibling_bucket->get_size() <= this->factor / 2) {
-              // Merge!
-              binary_sibling =
-                  binary_sibling.substr(1, binary_sibling.size() - 1);
-              sibling_bucket->change_code(binary_sibling, this->depth);
-              sibling_bucket->change_local(sibling_bucket->get_local() - 1);
-              this->overwrite_bucket(sibling_bucket, sibling_pointer);
-              // Records should also be changed if the main bucket isn't empty
-
-              // change free list
-              int top = this->get_top_free_list();
-              this->free_bucket(pointer, top);
-              this->change_top_free_list(pointer);
-
-              // Change index
-              redirect_index(sibling_pointer, binary_sibling);
-            } else {
-              // if combining isn't possible, just ignore the empty bucket
-              delete sibling_bucket;
-            }
-          } else if (bucket->get_size() == 1) {
-            // Are inside a chained and it's left as empty
-            // Remove pointer of bucket
-            bucket->change_pointer(-1);
-            // Change free list
-            int top = this->get_top_free_list();
-            this->free_bucket(pointer, top);
-            this->change_top_free_list(pointer);
-          } else {
-            // Use move last in the current bucket
-            cout << "only modifies bucket with no chaining" << endl;
-            bucket->change_size(bucket->get_size() - 1);
-            bucket->change_records(prev_records, this->get_record_size());
-            overwrite_bucket(bucket, pointer);
-          }
-        } else {
-          int last_pointer = bucket->get_pointer();
-          Bucket *last_bucket = get_bucket(last_pointer);
-          // Use move last with the last chained bucket
-          cout << "use move last with the last chained bucket" << endl;
-          last_pointer = last_bucket->get_pointer();
-          last_bucket = get_bucket(last_bucket->get_pointer());
-          while (true) {
-            if (last_bucket->get_pointer() == -1) {
-              // last bucket in chain!
-              // Done
-              break;
-            } else {
-              // go to next bucket
-              last_pointer = last_bucket->get_pointer();
-              delete last_bucket;
-              last_bucket = get_bucket(last_pointer);
-            }
-          }
-          string last_records = "";
-          int i = 0;
-          for (; i < bucket->get_size() - 1; i++) {
-            string record = bucket->get_record(i, this->record_size);
-            last_records += record;
-          }
-          string last_record = bucket->get_record(i, this->record_size);
-          prev_records += last_record;
-          bucket->change_records(prev_records, this->record_size);
-          // Check if last_bucket is empty to free
-          if (last_bucket->get_size() == 1) {
-            // Remove pointer of bucket
-            bucket->change_pointer(-1);
-            // Change free list
-            int top = this->get_top_free_list();
-            this->free_bucket(pointer, top);
-            this->change_top_free_list(pointer);
-          } else {
-            last_bucket->change_size(last_bucket->get_size() - 1);
-            last_bucket->change_records(last_records, this->get_record_size());
-            overwrite_bucket(last_bucket, last_pointer);
-          }
-
-          overwrite_bucket(bucket, pointer);
-
-          delete last_bucket;
-        }
-
+        // cout << "Found key" << endl;
         break;
       } else {
         // Not found, so search in next bucket in chain if it exists
@@ -692,6 +629,111 @@ public:
           bucket = this->get_bucket(pointer);
         }
       }
+    }
+    // Use move to last to move the last record in case there is a next
+    // pointer
+    // If this activates, it means that the pointed bucket is last, so
+    // there is no momvement to next bucket However, we must check if
+    // it's empty and the "sibling", has space to combine them
+
+    if (found == false) {
+      return found;
+    }
+
+    if (bucket->get_pointer() == -1) {
+      // Could be changed to be activated at half capacity or something like
+      // that. Would require changes in the merging
+      if (bucket->get_size() == 1 && get_index_pointer(pos_header) == pointer) {
+        // must check if can be combined with sibling in the case we are
+        // first.
+        // Find sibling
+        string binary_sibling = (bucket->get_code()[0] == '0' ? "1" : "0");
+        binary_sibling +=
+            bucket->get_code().substr(1, bucket->get_code().size() - 1);
+        // Find bucket of sibling
+        int sibling_pointer =
+            get_index_pointer(stoi(binary_sibling, nullptr, 2));
+        Bucket *sibling_bucket = get_bucket(sibling_pointer);
+        if (sibling_bucket->get_size() <= this->factor / 2) {
+          // Merge!
+          binary_sibling = binary_sibling.substr(1, binary_sibling.size() - 1);
+          sibling_bucket->change_code(binary_sibling, this->depth);
+          sibling_bucket->change_local(sibling_bucket->get_local() - 1);
+          this->overwrite_bucket(sibling_bucket, sibling_pointer);
+          // Records should also be changed if the main bucket isn't empty
+
+          // change free list
+          long int top = this->get_top_free_list();
+          this->free_bucket(pointer, top);
+          this->change_top_free_list(pointer);
+
+          // Change index
+          redirect_index(sibling_pointer, binary_sibling);
+        } else {
+          // if combining isn't possible, just ignore the empty bucket
+          delete sibling_bucket;
+        }
+      } else if (bucket->get_size() == 1) {
+        // Are inside a chained and it's left as empty
+        // Remove pointer of bucket
+        bucket->change_pointer(-1);
+        // Change free list
+        long int top = this->get_top_free_list();
+        this->free_bucket(pointer, top);
+        this->change_top_free_list(pointer);
+      } else {
+        // Use move last in the current bucket
+        // cout << "only modifies bucket with no chaining" << endl;
+        bucket->change_size(bucket->get_size() - 1);
+        bucket->change_records(prev_records, this->record_size, this->factor);
+        overwrite_bucket(bucket, pointer);
+      }
+    } else {
+      int last_pointer = bucket->get_pointer();
+      Bucket *last_bucket = get_bucket(last_pointer);
+      // Use move last with the last chained bucket
+      // cout << "use move last with the last chained bucket" << endl;
+      last_pointer = last_bucket->get_pointer();
+      last_bucket = get_bucket(last_bucket->get_pointer());
+      while (true) {
+        if (last_bucket->get_pointer() == -1) {
+          // last bucket in chain!
+          // Done
+          break;
+        } else {
+          // go to next bucket
+          last_pointer = last_bucket->get_pointer();
+          delete last_bucket;
+          last_bucket = get_bucket(last_pointer);
+        }
+      }
+      string last_records = "";
+      int i = 0;
+      for (; i < bucket->get_size() - 1; i++) {
+        string record = bucket->get_record(i, this->record_size);
+        last_records += record;
+      }
+      string last_record = bucket->get_record(i, this->record_size);
+      prev_records += last_record;
+      bucket->change_records(prev_records, this->record_size, this->factor);
+      // Check if last_bucket is empty to free
+      if (last_bucket->get_size() == 1) {
+        // Remove pointer of bucket
+        bucket->change_pointer(-1);
+        // Change free list
+        long int top = this->get_top_free_list();
+        this->free_bucket(pointer, top);
+        this->change_top_free_list(pointer);
+      } else {
+        last_bucket->change_size(last_bucket->get_size() - 1);
+        last_bucket->change_records(last_records, this->record_size,
+                                    this->factor);
+        overwrite_bucket(last_bucket, last_pointer);
+      }
+
+      overwrite_bucket(bucket, pointer);
+
+      delete last_bucket;
     }
     // TODO
     // Test
