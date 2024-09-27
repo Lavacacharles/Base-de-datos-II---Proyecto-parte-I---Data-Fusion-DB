@@ -13,23 +13,13 @@
 
 using namespace std;
 
-// Factor de bloque
-const int Default_F = 3;
-// Cantidad de digitos en el hash index (Profundidad global)
-const int Default_D = 3;
-
 // structure of bucket
-// code, size, local depth, pointer, values
-// string, int, int, TV * size, int
-
-// Problems:
-// TODO
-// - Parse for insertion so that data is separated with something, like a comma,
-// to give the correct size to the fields in a new string
+// code, size, local depth, values, pointer
+// string, int, int, TV * size, long int
 
 // The key needs to be a int because of the hashing function. Before bitset was
 // used and it works with string, but it needs a constant as limit. External
-// package booster can be used to fix this, but is not implemetned
+// package booster can be used to fix this, but is not implemented
 class ExtendibleHashingFile : public FileParent<int> {
 private:
   string index_name;
@@ -413,7 +403,7 @@ public:
         // Remember, we are assuming that the key is the first field
         current_key = record.substr(0, this->key_size);
         if (stoi(current_key) == key) {
-          return record;
+          return this->clean_record(record);
         }
       }
 

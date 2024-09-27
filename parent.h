@@ -79,7 +79,21 @@ protected:
       }
       i++;
     }
-    return record;
+    return parsed_record;
+  }
+
+  string clean_record(string record) {
+    string clean_record = "";
+    int start = 0;
+    for (int i = 0; i < get_number_fields(); i++) {
+      int size = get_field_size(i);
+      string field = record.substr(start, size);
+      size_t end = field.find_last_not_of(" ");
+
+      clean_record += field.substr(0, end + 1) + ",";
+      start += size;
+    }
+    return clean_record.substr(0, clean_record.size() - 1);
   }
 
 public:
