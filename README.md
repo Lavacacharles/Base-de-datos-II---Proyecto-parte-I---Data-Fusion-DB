@@ -34,7 +34,7 @@ estructurados, incluyendo documentos textuales en principio para luego incluir o
 Para la gestión de los archivos físicos, se eligieron 3 estrategias para la organización de archivos e índices.
 
 - **_AVL File_**
-- **_B+Tree Indexing_**
+- **_Sequential File_**
 - **_Extendible Hashing Indexing_**
 
 ## AVL File
@@ -153,7 +153,114 @@ Búsqueda en BST
 | search      | 0.001 | 0.011 | 0.097  | 1.011   | 7.28     | 19.03       |
 | rangeSearch | 0.013 | 0.087 | 0.138  | 0.154   | 0.22     | 0.27        |
 
-## B+Tree Indexing
+
+## Sequential File
+
+Sequential File es una forma de organizar los registros entre dos archivos, uno principal(main) y otro auxiliar(aux), en el archivo principal están los registros ordenados en función de una clave(key), adicionalmente a la información de los registros, cada uno contiene información de la longitud del propio registro y un puntero lógico al siguiente elemento.
+
+
+Consideraciones:
+ - Mantener el archivo (main) siempre ordenado
+ - Manjamos un atributo booleano 'IsInDataPage' para identificar a los registros que están en la página principal de datos.
+
+#### **Insert(R record)**
+
+Búsqueda del registro más cercano:
+
+1. Se realiza una búsqueda binaria para encontrar el registro cuyo valor clave (key) es el más cercano al valor del registro que se va a insertar.
+   - Avanzamos mediante el puntero lógico al siguiente elemento.
+   - Seguiremos este procedimiento y saltamos entre el archivo principa y el auxiliar utilizando el atributo IsInDataPage.
+2. Al encontrar el valor mayor mas cercano, copiamos los valores de la consulta previa y los del nuevo registro en la posición actual.
+3. Modificamos el valor del puntero lógico.
+   - Si no se llego al final, el puntero es igual a la posición del valor mayor más cercano.
+   - Si llego al final se asigna al puntero lógico la última posición del archivo auxiliar más 1, y se actualiza IsInDataPage.
+
+#### **Remove(T key)**
+
+1. Inicio de la búsqueda en el archivo principal (main):
+
+- La búsqueda comienza en el archivo principal utilizando el algoritmo de búsqueda binaria.
+- Se localiza el registro deseado o el registro más cercano al valor clave (key) del registro que estamos buscando.
+2. Verificación en el archivo principal:
+
+- Si el valor clave del registro buscado se encuentra en el archivo principal, se devuelve la información correspondiente de ese registro.
+- Si el valor clave no se encuentra en el archivo principal, la búsqueda continúa en el archivo auxiliar.
+
+3. Búsqueda en el archivo auxiliar:
+
+- Se utiliza el puntero lógico al siguiente registro  para avanzar en los registros y el campo IsInDataPage para verificar si estamos en el archivo auxiliar o principal.
+- Se inicia una búsqueda lineal a partir del registro más cercano, utilizando estos punteros para recorrer los registros en el archivo auxiliar.
+
+4. Verificación del valor clave durante la búsqueda lineal:
+
+- Durante el recorrido, se compara el valor clave del registro actual con el valor clave buscado.
+- Si se encuentra un registro con el valor clave igual al valor buscado, se devuelve la información de ese registro.
+
+5. Finalización de la búsqueda:
+
+- Si se llega a un registro donde el campo IsInDataPage es verdadero, significa que hemos vuelto al archivo principal y no existe un registro con el valor clave buscado.
+- En este caso, se concluye que el registro no está presente en la base de datos.
+
+#### **Merge()**
+
+1. Lectura del encabezado:
+
+- El algoritmo de merge comienza leyendo la información del encabezado, que contiene la posición del primer registro en el archivo.
+- Esta posición inicial será el punto de partida para la combinación de los archivos principal (main) y auxiliar.
+
+2. Determinación del archivo:
+
+- A partir de la posición obtenida, se verifica en qué archivo se encuentra el registro actual utilizando el valor del campo IsInDataPage:
+      Si el puntero lógico = 1, el registro está en el archivo principal (main).
+      Si puntero lógico = 0, el registro está en el archivo auxiliar.
+
+3. Escritura del registro en el nuevo archivo:
+
+- Una vez encontrado el registro en el archivo correspondiente, se escribe en un nuevo archivo de salida.
+- Este nuevo archivo combinará los registros de ambos archivos (principal y auxiliar) de manera ordenada.
+
+4. Actualización de IsInDataPage y el puntero lógico:
+
+- Tras escribir el registro en el nuevo archivo, se actualizan los valores de los campos IsInDataPage y la siguiente posición lógica:
+- El valor de IsInDataPage se toma del registro recién escrito.
+- El campo nextPos se actualiza con el valor del puntero al siguiente registro escrito, que indica la posición del siguiente registro a procesar.
+
+5. Repetición del proceso:
+
+- El algoritmo continúa repitiendo el proceso de leer un registro, escribirlo en el nuevo archivo y actualizar los punteros hasta que el campo del siguiente puntero tenga el valor -1.
+- El valor -1 en el puntero lógico indica que se ha llegado al último registro y no hay más registros por procesar.
+
+6. Finalización:
+
+- Una vez que el valor del puntero lógico es igual a -1, el proceso de merge ha finalizado, ya que se ha combinado todo el contenido de los archivos principal y auxiliar en el nuevo archivo.
+- El nuevo archivo se convierte en el archivo principal actualizado, y el archivo auxiliar se vacía o se reutiliza.
+
+#### **Eliminacion(T key)**
+
+1. Combinación de los archivos principales y auxiliares:
+
+- Antes de proceder con la eliminación, los archivos principal (main) y auxiliar se combinan en uno solo.
+- Este proceso de combinación organiza todos los registros de manera secuencial, facilitando el acceso tanto al registro anterior como al registro posterior al que se va a eliminar.
+2. Ordenación de los registros:
+
+- Durante el proceso de combinación, los registros se ordenan completamente según sus claves (key), lo que permite localizar de forma eficiente el registro que se desea eliminar.
+3. Búsqueda binaria del registro a eliminar:
+
+- Se realiza una búsqueda binaria para localizar el registro que se quiere eliminar, utilizando el valor clave (key) como criterio de búsqueda.
+- Al encontrar la posición exacta del registro a eliminar, también se obtiene la posición del registro anterior a este, lo que es clave para actualizar los punteros.
+4. Actualización del puntero lógico del registro anterior:
+
+Una vez identificadas las posiciones del registro a eliminar y del registro anterior, se procede a actualizar el campo puntero lógico del registro anterior.
+El valor del puntero lógico del registro anterior se modifica para apuntar al registro siguiente al que se va a eliminar, saltando así el registro que se está eliminando.
+5. Marcado del registro como eliminado:
+
+El campo puntero lógico del registro que se desea eliminar se actualiza con el valor -2, lo que indica que el registro ha sido eliminado.
+Este valor especial (-2) permite al sistema identificar que el registro ya no es válido y que su espacio puede ser reutilizado en futuras operaciones.
+6. Finalización de la eliminación:
+
+Tras actualizar los punteros y marcar el registro como eliminado, el proceso de eliminación se completa.
+Los registros en el archivo continúan siendo accesibles y secuenciales, pero el registro eliminado ha sido omitido de la secuencia.
+
 
 ## Extendible Hashing Indexing
 
@@ -329,7 +436,7 @@ algoritmo.
 | buildFromFile      | N=10  | N=100 | N=1K   | N=10K   | N=100K   | N=1M(aprox) |
 | ------------------ | ----- | ----- | ------ | ------- | -------- | ----------- |
 | AVLFile            | 0.383 | 7.989 | 122.22 | 1556.27 | 17735.63 | 201655.4    |
-| B+Tree             |       |       |        |         |          |             |
+| Sequential File             |       |       |        |         |          |             |
 | Extendible Hashing | 0.001 | 0.389 | 0.776  | 1.438   | 3.456    | 20.910      |
 
 #### Gráfica de complejidades
@@ -349,7 +456,7 @@ algoritmo.
 | add                | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M  |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ----- |
 | AVLFile            | 0.023 | 0.083 | 0.196 | 0.204 | 0.25   | 0.31  |
-| B+Tree             |       |       |       |       |        |       |
+| Sequential File             |       |       |       |       |        |       |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000 |
 
 #### Gráfica de complejidades
@@ -370,7 +477,7 @@ algoritmo.
 | remove             | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ----------- |
 | AVLFile            | 0.001 | 0.001 | 0.002 | 0.002 | 0.002  | 0.002       |
-| B+Tree             |       |       |       |       |        |             |
+| Sequential File             |       |       |       |       |        |             |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.0000.000  |
 
 #### Gráfica de complejidades
@@ -391,7 +498,7 @@ algoritmo.
 | search             | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ----------- |
 | AVLFile            | 0.001 | 0.011 | 0.097 | 1.011 | 7.28   | 19.03       |
-| B+Tree             |       |       |       |       |        |             |
+| Sequential File             |       |       |       |       |        |             |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.003  | 0.051       |
 
 #### Gráfica de complejidades
@@ -411,7 +518,7 @@ algoritmo.
 | rangeSearch        | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ---------- |
 | AVLFile            | 0.013 | 0.087 | 0.138 | 0.154 | 0.22   | 0.27       |
-| B+Tree             |       |       |       |       |        |            |
+| Sequential File             |       |       |       |       |        |            |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000      |
 
 #### Gráfica de complejidades
