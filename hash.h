@@ -419,7 +419,7 @@ public:
 
   vector<string> range_search(int start_key, int end_key) {
     vector<string> in_range;
-    for (int i = start_key; i < end_key; i++) {
+    for (int i = start_key; i <= end_key; i++) {
       in_range.push_back(this->find(i));
     }
     return in_range;

@@ -1,0 +1,3 @@
+D:/Base-de-datos-II---Proyecto-parte-I---Data-Fusion-DB/cmake-build-debug/CMakeFiles/Base_de_datos_II___Proyecto_parte_I___Data_Fusion_DB.dir
+D:/Base-de-datos-II---Proyecto-parte-I---Data-Fusion-DB/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/Base-de-datos-II---Proyecto-parte-I---Data-Fusion-DB/cmake-build-debug/CMakeFiles/rebuild_cache.dir
