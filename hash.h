@@ -30,7 +30,7 @@ const int Default_D = 3;
 // The key needs to be a int because of the hashing function. Before bitset was
 // used and it works with string, but it needs a constant as limit. External
 // package booster can be used to fix this, but is not implemetned
-class ExtendibleHashingFile : public FileParent {
+class ExtendibleHashingFile : public FileParent<int> {
 private:
   string index_name;
   // The factor de bloque and profundidad global could be accesses with a field
@@ -359,7 +359,7 @@ public:
     vector<vector<string>> dataframe;
     vector<int> sizes;
 
-    this->create_from_csv(csv_file, dataframe, sizes);
+    this->create_from_csv(csv_file, dataframe, sizes, 0);
 
     // 3. Create index from the fields
     this->create_index();
@@ -390,7 +390,7 @@ public:
   }
   virtual ~ExtendibleHashingFile() {}
 
-  string search(int key) {
+  string find(int key) {
     // TK is a template parameter but it is treated internally as a string.
     // Might be better to receive a string directly
 
@@ -427,12 +427,12 @@ public:
   vector<string> range_search(int start_key, int end_key) {
     vector<string> in_range;
     for (int i = start_key; i < end_key; i++) {
-      in_range.push_back(this->search(i));
+      in_range.push_back(this->find(i));
     }
     return in_range;
   }
 
-  bool insert(string record) {
+  bool add(string record) {
     return insert_parsed(this->separate_record(record));
   }
 
