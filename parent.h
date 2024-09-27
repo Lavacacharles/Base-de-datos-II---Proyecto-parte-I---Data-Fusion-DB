@@ -81,17 +81,27 @@ protected:
     return record;
   }
 
+  string get_file_name(string _fileName, string sufix) {
+    if (_fileName.find(".dat")!= -1)
+      return _fileName.substr(0,_fileName.find(".dat")) + sufix +".dat";
+    if (_fileName.find(".txt")!= -1)
+      return _fileName.substr(0,_fileName.find(".txt")) + sufix +".txt";
+    if (_fileName.find(".bin")!= -1)
+      return _fileName.substr(0,_fileName.find(".bin")) + sufix +".bin";
+    return _fileName+sufix;
+  }
+
 public:
   FileParent(string file_name) {
-    this->data_name = file_name + "_data";
-    this->header_name = file_name + "_header";
+    this->data_name = get_file_name(file_name,"_data");
+    this->header_name = get_file_name(file_name , "_header");
     this->record_size = this->get_record_size();
     this->key_size = this->get_field_size(0);
   }
   FileParent(string file_name, string csv_file) {
     cout << "doble input constructor" << endl;
-    this->data_name = file_name + "_data";
-    this->header_name = file_name + "_header";
+    this->data_name = get_file_name(file_name,"_data");
+    this->header_name = get_file_name(file_name , "_header");
     this->record_size = 0;
     this->key_size = 0;
   }
