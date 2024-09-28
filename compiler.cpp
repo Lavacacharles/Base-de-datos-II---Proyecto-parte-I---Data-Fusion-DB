@@ -133,37 +133,47 @@ private:
         return tokens;
     }
 
-    void validateCreateTable(const std::string& statement) {
+    vector<string> validateCreateTable(const std::string& statement) {
         static const std::regex createTableRegex(R"(create\s+table\s+(\w+)\s+from\s+file\s+"([^"]+)\"\s+using\s+index\s+(\w+)\("(\w+)\"\))");
         std::smatch matches;
+        vector<string> res;
         if (!std::regex_search(statement, matches, createTableRegex)) {
-            throw std::runtime_error("Invalid CREATE TABLE syntax");
+            res.push_back("Invalid CREATE TABLE syntax");
+            return res;
         }
         std::cout << "CREATE TABLE operation detected" << std::endl;
+        res.push_back("CREATE TABLE operation detected");
         std::cout << "Table name: " << matches[1] << std::endl;
+        res.push_back(matches[1]);
         std::cout << "File path: " << matches[2] << std::endl;
         std::cout << "Index type: " << matches[3] << std::endl;
         std::cout << "Index column: " << matches[4] << std::endl;
         if (matches[3].str() == "hash") {
-            auto* file = new ExtendibleHashingFile(matches[1].str(), 2, 3, matches[2].str());
+            auto* file = new ExtendibleHashingFile(matches[1].str(), 8, 16, matches[2].str());
             delete file;
             cout << "Se creo la tabla correctamente" << endl;
+            res.push_back("Se creo la tabla correctamente");
         } else if (matches[3].str() == "avl") {
             auto* file = new AVLFile<Record<string>, string>(matches[1].str());
             buildFromCSV(*file, matches[2].str(), 0);
             delete file;
             cout << "Se creo la tabla correctamente" << endl;
+            res.push_back("Se creo la tabla correctamente");
         }
+        return res;
     }
 
-    void validateSelect(const std::string& statement) {
+    vector<string> validateSelect(const std::string& statement) {
         static const std::regex selectRegex(R"(select\s+from\s+(\w+)\s+where\s+(\w+)\s*(=|between)\s*(.*))");
         std::smatch matches;
+        vector<string> res;
         if (!std::regex_search(statement, matches, selectRegex)) {
-            throw std::runtime_error("Invalid SELECT syntax");
+            res.push_back("Invalid SELECT syntax");
+            return res;
         }
         if (matches[3] == "between") {
             std::cout << "SEARCH RANGE operation detected" << std::endl;
+            res.push_back("SEARCH RANGE operation detected");
             cout << "Tipo: " << extract_type(matches[1].str()) << endl;
             if (extract_type(matches[1].str()) == 0) {
                 cout << "Table Search: " << matches[1].str() << std::endl;
@@ -172,12 +182,16 @@ private:
                 cout << "Key: " << range[0] << " " << range[1]  << std::endl;
                 const vector<string> result = file->range_search(stoi(range[0]), stoi(range[1]));
                 cout << "Result: " << std::endl;
+                string values;
                 for (const auto & i : result) {
-                    if (i != "Key not found")
+                    if (i != "Key not found") {
                         cout << i << endl;
+                        values += i + ";";
+                    }
                 }
                 cout << "-- End --" << std::endl;
                 delete file;
+                res.push_back(values);
             }
             else if(extract_type(matches[1].str()) == 1) {
                 cout << "Table Search: " << matches[1].str() << std::endl;
@@ -186,14 +200,19 @@ private:
                 cout << "Key: " << range[0] << " " << range[1]  << std::endl;
                 const vector<string> result = file->rangeSearch(range[0], range[1]);
                 cout << "Result: " << std::endl;
+                string values;
                 for (const auto & i : result) {
                     cout << i << endl;
+                    values += i + ";";
                 }
                 cout << "-- End --" << std::endl;
                 delete file;
+                res.push_back(values);
             }
+            return res;
         } else {
             std::cout << "SEARCH operation detected" << std::endl;
+            res.push_back("SEARCH operation detected");
             cout << "Tipo: " << extract_type(matches[1].str()) << endl;
             if (extract_type(matches[1].str()) == 0) {
                 cout << "Table Search: " << matches[1].str() << std::endl;
@@ -201,6 +220,7 @@ private:
                 cout << "Key: " << stoi(matches[4].str()) << std::endl;
                 const string result = file->find(stoi(matches[4].str()));
                 cout << "Find Result: " << result << endl;
+                res.push_back(result);
                 cout << "-- End --" << std::endl;
                 delete file;
             }
@@ -210,45 +230,57 @@ private:
                 cout << "Key: " << matches[4].str() << std::endl;
                 const string result = file->search(matches[4].str());
                 cout << "Find Result: " << result << endl;
+                res.push_back(result);
                 cout << "-- End --" << std::endl;
                 delete file;
             }
+            return res;
         }
     }
 
-    void validateInsert(const std::string& statement) {
+    vector<string> validateInsert(const std::string& statement) {
         static const std::regex insertRegex(R"(insert\s+into\s+(\w+)\s+values\s*\((.*)\))");
         std::smatch matches;
+        vector<string> res;
         if (!std::regex_search(statement, matches, insertRegex)) {
-            throw std::runtime_error("Invalid INSERT syntax");
+            res.push_back("Invalid INSERT syntax");
+            return res;
         }
         std::cout << "INSERT operation detected" << std::endl;
+        res.push_back("INSERT operation detected");
         cout << "Tipo: " << extract_type(matches[1].str()) << endl;
         if (extract_type(matches[1].str()) == 0) {
             cout << "Table Search: " << matches[1].str() << std::endl;
             auto* file = new ExtendibleHashingFile(matches[1].str());
             const bool is_success = file->add(matches[2].str());
             cout << (is_success? "Se inserto correctamente" + matches[2].str()  : "El key se repite o hubo un fallo interno") << std::endl;
+            res.push_back(is_success? "Se inserto correctamente" + matches[2].str()  : "El key se repite o hubo un fallo interno");
             cout << "-- End --" << std::endl;
             delete file;
+            return res;
         }
         else if(extract_type(matches[1].str()) == 1) {
             cout << "Table Search: " << matches[1].str() << std::endl;
             auto* file = new AVLFile<Record<string>, string>(matches[1].str());
             const bool is_success = file->add(getRecord<string>(matches[2].str()));
             cout << (is_success? "Se inserto correctamente" + matches[2].str() : "El key se repite o hubo un fallo interno") << std::endl;
+            res.push_back(is_success? "Se inserto correctamente" + matches[2].str()  : "El key se repite o hubo un fallo interno");
             cout << "-- End --" << std::endl;
             delete file;
+            return res;
         }
     }
 
-    void validateDelete(const std::string& statement) {
+    vector<string> validateDelete(const std::string& statement) {
         static const std::regex deleteRegex(R"(delete\s+from\s+(\w+)\s+where\s+(\w+)\s*=\s*(.*))");
         std::smatch matches;
+        vector<string> res;
         if (!std::regex_search(statement, matches, deleteRegex)) {
-            throw std::runtime_error("Invalid DELETE syntax");
+            res.push_back("Invalid DELETE syntax");
+            return res;
         }
         std::cout << "REMOVE operation detected" << std::endl;
+        res.push_back("REMOVE operation detected");
         cout << "Tipo: " << extract_type(matches[1].str()) << endl;
         if (extract_type(matches[1].str()) == 0) {
             cout << "Table Search: " << matches[1].str() << std::endl;
@@ -256,8 +288,10 @@ private:
             cout << "Key: " << matches[3].str() << std::endl;
             const bool is_success = file->remove(stoi(matches[3].str()));
             cout << (is_success? "Se Elimino correctamente el registro con key " + matches[3].str()  : "Ocurrio un error, intenta de nuevo") << std::endl;
+            res.push_back(is_success? "Se Elimino correctamente el registro con key " + matches[3].str()  : "Ocurrio un error, intenta de nuevo");
             cout << "-- End --" << std::endl;
             delete file;
+            return res;
         }
         else if(extract_type(matches[1].str()) == 1) {
             cout << "Table Search: " << matches[1].str() << std::endl;
@@ -265,15 +299,18 @@ private:
             cout << "Key: " << matches[3].str() << std::endl;
             const bool is_success = file->remove(matches[3].str());
             cout << (is_success? "Se Elimino correctamente el registro con key " + matches[3].str()  : "Ocurrio un error, intenta de nuevo") << std::endl;
+            res.push_back(is_success? "Se Elimino correctamente el registro con key " + matches[3].str()  : "Ocurrio un error, intenta de nuevo");
             cout << "-- End --" << std::endl;
             delete file;
+            return res;
         }
     }
 
 public:
-    void processQuery(const std::string& query) {
+    vector<vector<string>> processQuery(const std::string& query) {
         std::vector<std::string> statements = splitString(query, ';');
-        
+        vector<vector<string>> resquery;
+
         for (const auto& statement : statements) {
             if (statement.empty()) continue;
             
@@ -283,16 +320,16 @@ public:
                 iss >> command;
                 
                 if (command == "create") {
-                    validateCreateTable(statement);
+                    resquery.push_back(validateCreateTable(statement));
                 }
                 else if (command == "select") {
-                    validateSelect(statement);
+                    resquery.push_back(validateSelect(statement));
                 }
                 else if (command == "insert") {
-                    validateInsert(statement);
+                    resquery.push_back(validateInsert(statement));
                 }
                 else if (command == "delete") {
-                    validateDelete(statement);
+                    resquery.push_back(validateDelete(statement));
                 }
                 else {
                     throw std::runtime_error("Unknown command: " + command);
@@ -302,6 +339,7 @@ public:
                 std::cerr << "  " << e.what() << std::endl;
             }
         }
+        return resquery;
     }
 };
 
