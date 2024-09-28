@@ -681,7 +681,7 @@ Como podemos notar, el tiempo de crecimiento de ambas estructuras es logarítmic
 | add                | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M  |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ----- |
 | AVLFile            | 0.023 | 0.083 | 0.196 | 0.204 | 0.25   | 0.31  |
-| Sequential File    |       |       |       |       |        |       |
+| Sequential File    | 0.181 | 2.035 | 17.08 | 235.25 | 2796.80 | --- |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000 |
 
 #### Gráfica de complejidades
@@ -699,7 +699,7 @@ Al insertar individualmente, se nota que los tiempos también crecen logarítmic
 | remove             | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ----------- |
 | AVLFile            | 0.001 | 0.001 | 0.002 | 0.002 | 0.002  | 0.002       |
-| Sequential File    |       |       |       |       |        |             |
+| Sequential File    | 0.007 | 0.020 | 0.042 | 0.361 | 4.056  | ---         |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000       |
 
 #### Gráfica de complejidades
@@ -721,7 +721,7 @@ En el caso del remove, se ve que todos los tiempos son pequeños y el incremento
 | search             | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ----------- |
 | AVLFile            | 0.001 | 0.011 | 0.097 | 1.011 | 7.28   | 19.03       |
-| Sequential File    |       |       |       |       |        |             |
+| Sequential File    | 0.001 | 0.001 | 0.001  | 0.007 | 0.098 | ---         |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.003  | 0.051       |
 
 #### Gráfica de complejidades
@@ -739,7 +739,7 @@ Para la búsqueda de un registro por llave, se tiene a situaciones similares a l
 | rangeSearch     | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox |
 | --------------- | ----- | ----- | ----- | ----- | ------ | ---------- |
 | AVLFile         | 0.013 | 0.087 | 0.138 | 0.154 | 0.22   | 0.27       |
-| Sequential File |       |       |       |       |        |            |
+| Sequential File | 0.268 | 4.100 | 35.030 | 436.299 | --- | ---        |
 
 #### Gráfica de complejidades
 
