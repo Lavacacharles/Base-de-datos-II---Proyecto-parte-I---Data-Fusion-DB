@@ -444,6 +444,5 @@ int main() {
     cout << endl;
     compiler.processQuery(query_remove_avl);
     cout << endl;
-
     return 0;
 }
