@@ -543,6 +543,97 @@ DELETE FROM nombre_tabla WHERE nombre_columna = valor
 
 # GUI
 
+## Visión General
+
+Esta interfaz de usuario (UI) ha sido desarrollada en Python utilizando PyQt5 para crear una aplicación de gestión de bases de datos. La UI se conecta con la lógica backend implementada en C++ a través de pybind, permitiendo una interacción fluida entre la interfaz gráfica y el motor de base de datos.
+
+## Componentes Principales
+
+### Clase `MiSGDB`
+
+Esta es la clase principal que hereda de `QWidget` y configura la ventana principal de la aplicación.
+
+#### Métodos Principales
+
+- `__init__(self)`: Constructor de la clase. Inicializa y configura todos los componentes de la UI.
+- `ejecutar_comando()`: Método que se ejecuta al hacer clic en el botón "Ejecutar". Procesa las consultas SQL y actualiza la UI con los resultados.
+
+### Funciones Auxiliares
+
+- `getRecordSelect(record)`: Procesa un registro individual devuelto por una consulta SELECT.
+- `getRecordSelectRange(record)`: Procesa múltiples registros devueltos por una consulta SELECT con rango.
+
+## Estructura de la UI
+
+1. **Layout Principal**: Un `QVBoxLayout` que organiza verticalmente todos los componentes de la ventana.
+
+2. **Layout Superior**:
+   - Panel Lateral: Muestra las tablas existentes como botones.
+   - Área de Texto: Un `QTextEdit` para ingresar consultas SQL.
+   - Botón "Ejecutar": Inicia la ejecución de las consultas.
+
+3. **Pestañas de Resultados**: Un `QTabWidget` con tres pestañas:
+   - Result: Muestra los resultados de las consultas en una tabla.
+   - Explain: (Funcionalidad no implementada en el código proporcionado)
+   - Transx: (Funcionalidad no implementada en el código proporcionado)
+
+4. **Footer**: Muestra el tiempo de ejecución de las consultas.
+
+## Funcionalidades Clave
+
+### Carga de Tablas Existentes
+
+Al iniciar, la aplicación lee un archivo 'tablas.txt' para cargar los nombres de las tablas existentes y crear botones correspondientes en el panel lateral.
+
+### Ejecución de Consultas SQL
+
+1. El usuario ingresa una consulta SQL en el área de texto.
+2. Al hacer clic en "Ejecutar", se llama a `ejecutar_comando()`.
+3. La consulta se procesa utilizando el compilador SQL (implementado en C++).
+4. Los resultados se muestran en la tabla de la pestaña "Result".
+
+### Manejo de Diferentes Tipos de Consultas
+
+- **CREATE TABLE**: Añade un nuevo botón al panel lateral y actualiza el archivo 'tablas.txt'.
+- **SELECT**: Muestra los resultados en la tabla, diferenciando entre búsquedas simples y por rango.
+- **INSERT**: Muestra un mensaje de éxito o error.
+
+### Manejo de Errores
+
+Utiliza `QMessageBox` para mostrar advertencias y errores al usuario, como comandos desconocidos o llaves duplicadas.
+
+## Integración con C++
+
+- La clase `SQLCompiler` se importa desde un módulo C++ compilado con pybind11.
+- Los métodos de esta clase se utilizan para procesar las consultas SQL ingresadas por el usuario.
+
+## Limitaciones y Mejoras Futuras
+
+1. Implementar funcionalidad para las pestañas "Explain" y "Transx".
+2. Mejorar la visualización de resultados para consultas más complejas.
+3. Añadir más interactividad a los botones de tablas en el panel lateral.
+4. Implementar un sistema de logging más robusto para debugging.
+
+## Requisitos del Sistema
+
+- Python 3.x
+- PyQt5
+- Módulo C++ compilado con pybind11 para el compilador SQL
+
+## Ejecución de la Aplicación
+
+Para ejecutar la aplicación, se debe correr el script Python que contiene la clase `MiSGDB`. Asegúrese de que todos los módulos necesarios estén instalados y que el compilador SQL en C++ esté correctamente vinculado.
+
+```python
+if __name__ == '__main__':
+    compiler = returnCompiler.SQLCompiler()
+    app = QApplication(sys.argv)
+    ventana = MiSGDB()
+    ventana.show()
+    sys.exit(app.exec_())
+```
+
+
 # Resultados experimentales
 
 Para el ánalisis de los rendimientos entre técnicas, se utilizaron las tablas de tiempo de ejecución.
