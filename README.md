@@ -250,16 +250,34 @@ Búsqueda del registro más cercano:
 - Al encontrar la posición exacta del registro a eliminar, también se obtiene la posición del registro anterior a este, lo que es clave para actualizar los punteros.
 4. Actualización del puntero lógico del registro anterior:
 
-Una vez identificadas las posiciones del registro a eliminar y del registro anterior, se procede a actualizar el campo puntero lógico del registro anterior.
-El valor del puntero lógico del registro anterior se modifica para apuntar al registro siguiente al que se va a eliminar, saltando así el registro que se está eliminando.
+- Una vez identificadas las posiciones del registro a eliminar y del registro anterior, se procede a actualizar el campo puntero lógico del registro anterior.
+- El valor del puntero lógico del registro anterior se modifica para apuntar al registro siguiente al que se va a eliminar, saltando así el registro que se está eliminando.
 5. Marcado del registro como eliminado:
 
-El campo puntero lógico del registro que se desea eliminar se actualiza con el valor -2, lo que indica que el registro ha sido eliminado.
-Este valor especial (-2) permite al sistema identificar que el registro ya no es válido y que su espacio puede ser reutilizado en futuras operaciones.
+- El campo puntero lógico del registro que se desea eliminar se actualiza con el valor -2, lo que indica que el registro ha sido eliminado.
+- Este valor especial (-2) permite al sistema identificar que el registro ya no es válido y que su espacio puede ser reutilizado en futuras operaciones.
 6. Finalización de la eliminación:
 
-Tras actualizar los punteros y marcar el registro como eliminado, el proceso de eliminación se completa.
-Los registros en el archivo continúan siendo accesibles y secuenciales, pero el registro eliminado ha sido omitido de la secuencia.
+- Tras actualizar los punteros y marcar el registro como eliminado, el proceso de eliminación se completa.
+- Los registros en el archivo continúan siendo accesibles y secuenciales, pero el registro eliminado ha sido omitido de la secuencia.
+
+#### **RangeSearch(T begin-key, T end-key) **
+1. Inicializamos una lista para almacenar los registros
+2. Se ejecuta el algoritmo de búsqueda hasta encontrar la llave begin-key, o el valor mayor más cercano.
+   - Luego recorrer con el puntero lógico mientras la llave de la nueva consulta sea menor que la llave de finalización
+4. Cambiamos de ubicación entre el archivo principal y auxiliar con el atributo IsInDataPage, hasta llegar a la última llave end-key.
+   - Se va agregando a medida se mueve a través de los punteros lógicos.
+5. Se retorna la lista de registros.
+
+1. Se ejecuta la lógica de búsqueda de la llave
+
+### Evolución de tiempos de ejecución
+| seg         | N=10  | N=100 | N=1K   | N=10K   | N=100K   | N=1M(aprox) |
+| ----------- | ----- | ----- | ------ | ------- | -------- | ----------- |
+| insert      | 0.181 | 2.035 | 17.084  | 235.253   | 2796.806     | ---        |
+| remove      | 0.007 | 0.020 | 0.042  | 0.361   | 4.056    | ---       |
+| search      | 0.001 | 0.001 | 0.001  | 0.007   | 0.098     | ---       |
+| rangeSearch | 0.268 | 4.100 | 35.030  | 436.299   | ---     | ---        |
 
 
 ## Extendible Hashing Indexing
