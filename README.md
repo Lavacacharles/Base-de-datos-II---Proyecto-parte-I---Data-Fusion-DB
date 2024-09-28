@@ -419,7 +419,111 @@ Los siguientes tiempos están en segúndos. Se tiene un factor de 8 y una profun
 | search      | 0.000 | 0.000 | 0.000 | 0.000 | 0.003  | 0.051       |
 | rangeSearch | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000       |
 
-# Compilador y GUI
+# Compilador
+
+## Visión General
+
+El Compilador SQL actúa como una puerta de enlace API para nuestro mini sistema de gestión de bases de datos. Procesa consultas similares a SQL, determina el tipo de consulta, interactúa con la estructura de indexación apropiada y formatea la respuesta para que sea renderizada por una interfaz de usuario en Python.
+
+## Componentes Clave
+
+### Clase `SQLCompiler`
+
+Esta es la clase principal que maneja el procesamiento y la ejecución de consultas.
+
+#### Métodos Públicos
+
+- `processQuery(const std::string& query)`: Procesa una cadena de consulta SQL completa, que puede contener múltiples declaraciones separadas por punto y coma.
+
+#### Métodos Privados
+
+- `trim(const std::string& str)`: Elimina los espacios en blanco al inicio y al final de una cadena.
+- `splitString(const std::string& str, char delimiter)`: Divide una cadena en tokens basándose en un delimitador.
+- `validateCreateTable(const std::string& statement)`: Maneja las declaraciones CREATE TABLE.
+- `validateSelect(const std::string& statement)`: Maneja las declaraciones SELECT.
+- `validateInsert(const std::string& statement)`: Maneja las declaraciones INSERT.
+- `validateDelete(const std::string& statement)`: Maneja las declaraciones DELETE.
+
+### Funciones Auxiliares
+
+- `is_number(const std::string& s)`: Verifica si una cadena representa un número válido.
+- `extract_type(const std::string& s)`: Extrae el tipo de índice del archivo de metadatos.
+- `extraerNumerosEntre(const std::string& texto)`: Extrae números de una cláusula "between" en una consulta.
+- `separateId_data(const std::string& texto)`: Separa el ID y los datos en una cadena.
+
+## Flujo de Procesamiento de Consultas
+
+1. El método `processQuery` recibe una cadena de consulta completa.
+2. Divide la consulta en declaraciones individuales.
+3. Para cada declaración:
+   - Identifica el tipo de comando (CREATE, SELECT, INSERT, DELETE).
+   - Llama al método de validación apropiado.
+   - El método de validación analiza la declaración usando expresiones regulares.
+   - Extrae información relevante (nombre de la tabla, condiciones, valores).
+   - Determina el tipo de índice leyendo el archivo de metadatos.
+   - Crea una instancia de la estructura de índice apropiada (AVL, Extendible Hashing o Sequential File).
+   - Realiza la operación solicitada en la estructura de índice.
+   - Formatea el resultado y lo devuelve.
+
+## Tipos de Consultas Soportadas
+
+### CREATE TABLE
+
+```sql
+CREATE TABLE nombre_tabla FROM FILE "ruta_archivo" USING INDEX tipo_indice("nombre_columna")
+```
+
+- Soporta la creación de tablas con índice AVL o hash.
+- Lee datos del archivo especificado.
+
+### SELECT
+
+```sql
+SELECT FROM nombre_tabla WHERE nombre_columna = valor
+SELECT FROM nombre_tabla WHERE nombre_columna BETWEEN valor1 AND valor2
+```
+
+- Soporta consultas de coincidencia exacta y de rango.
+- Devuelve los registros coincidentes.
+
+### INSERT
+
+```sql
+INSERT INTO nombre_tabla VALUES (valor1, valor2, ...)
+```
+
+- Inserta un nuevo registro en la tabla especificada.
+
+### DELETE
+
+```sql
+DELETE FROM nombre_tabla WHERE nombre_columna = valor
+```
+
+- Elimina un registro de la tabla especificada basándose en la condición.
+
+## Manejo de Errores
+
+- El compilador utiliza bloques try-catch para manejar excepciones durante el procesamiento de consultas.
+- Proporciona mensajes de error informativos para sintaxis inválida o errores de procesamiento.
+
+## Integración con Estructuras de Índice
+
+- El compilador crea dinámicamente instancias de `AVLFile`, `ExtendibleHashingFile` o `SequentialFile` basándose en el tipo de índice almacenado en los metadatos.
+- Traduce las consultas tipo SQL en operaciones sobre estas estructuras de índice.
+
+## Formateo de Salida
+
+- El compilador formatea los resultados de cada operación en una estructura consistente.
+- Esta salida formateada está diseñada para ser fácilmente analizada y renderizada por la interfaz de usuario en Python.
+
+## Limitaciones y Mejoras Futuras
+
+- Actualmente soporta un subconjunto limitado de comandos y sintaxis SQL.
+- El manejo de errores podría ser más robusto y proporcionar retroalimentación más detallada.
+- Podría extenderse para soportar consultas más complejas y estructuras de índice adicionales.
+
+# GUI
 
 # Resultados experimentales
 
