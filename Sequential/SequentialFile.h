@@ -112,7 +112,7 @@ public:
     }
 
     bool add(R Nuevorecord) override {
-
+        cout << Nuevorecord.getData();
         Entry<R> NuevoRegistro(Nuevorecord);
 
         ifstream mainp(mainFilename, ios::binary| ios::app);
@@ -305,7 +305,7 @@ public:
         ifstream mainFile(mainFilename, ios::binary);
         if (!mainFile.is_open()) {
           return;
-        } 
+        }
         mainFile.seekg(0, ios::end);
         int fileSize = mainFile.tellg();
 
@@ -555,7 +555,7 @@ public:
                     result.push_back(record);
                     return result[0].record.getData();
                 }
-            } 
+            }
             else if ( menor(to_string(record.record.key), key) ) {
             // else if (record.record.key < key) {
                 inicio = medio + 1;
@@ -608,7 +608,7 @@ public:
             int medio = (inicio + fin) / 2;
             mainFile.seekg(medio * sizeof(Entry<R>) + sizeof(int) + sizeof(bool));
             mainFile.read((char*)&record, sizeof(Entry<R>));
-            
+
             if ( menor_igual(beginkey, record.record.key) ) {
             // if (record.record.key >= beginkey) { // beginkey =< record
                 fin = medio - 1;
