@@ -6,12 +6,13 @@
 #include <stdexcept>
 #include "avl.h"
 #include "hash.h"
+#include "Sequential/SequentialFile.h"
 
-template <class T> struct Record {
+template <class T> struct Record_avl {
     char key[260];
     char data[250]{};
-    Record() = default;
-    Record(T key_, const string &data_) {
+    Record_avl() = default;
+    Record_avl(T key_, const string &data_) {
         strcpy(this->key, convertToString(key_).c_str());
         strcpy(this->data, data_.c_str());
     }
@@ -19,16 +20,17 @@ template <class T> struct Record {
         string output = concatenate(key, ",") + data + "\n";
         return output;
     }
+
     T getKey() const { return convert<T>(key); }
 };
 
 template<class T>
-Record<string> getRecord(string line) {
+Record_avl<string> getRecord_avl(string line) {
     string id = "", data="", field;
     istringstream lineStream(line);
     getline(lineStream, id, ',');
     data = line.substr(id.length() + 1);
-    return Record<T>(id, data.c_str());
+    return Record_avl<T>(id, data.c_str());
 }
 
 template <class R, class T>
@@ -59,8 +61,8 @@ static void buildFromCSV(AVLFile<R, T> &avl, string fileName, int idPosition) {
             count++;
         }
         if (data != "" || id != "") {
-            Record<T> record(id, data.c_str());
-            avl.add(record);
+            Record_avl<T> Record_avl(id, data.c_str());
+            avl.add(Record_avl);
         }
     }
 }
@@ -144,7 +146,7 @@ private:
         std::cout << "CREATE TABLE operation detected" << std::endl;
         res.push_back("CREATE TABLE operation detected");
         std::cout << "Table name: " << matches[1] << std::endl;
-        res.push_back(matches[1]);
+        res.push_back(matches[1].str());
         std::cout << "File path: " << matches[2] << std::endl;
         std::cout << "Index type: " << matches[3] << std::endl;
         std::cout << "Index column: " << matches[4] << std::endl;
@@ -154,8 +156,54 @@ private:
             cout << "Se creo la tabla correctamente" << endl;
             res.push_back("Se creo la tabla correctamente");
         } else if (matches[3].str() == "avl") {
-            auto* file = new AVLFile<Record<string>, string>(matches[1].str());
-            buildFromCSV(*file, matches[2].str(), 0);
+            auto* file = new AVLFile<Record_avl<string>, string>(matches[1].str());
+            std::ifstream csvFile(matches[2].str());
+            std::string line;
+
+            if (!csvFile.is_open()) {
+                std::cerr << "No se pudo abrir el archivo: " << matches[2].str() << std::endl;
+            }
+
+            // Saltar el encabezado
+            std::getline(csvFile, line);
+
+            while (std::getline(csvFile, line)) {
+                // Eliminar espacios en blanco al inicio y al final de la línea
+                line.erase(0, line.find_first_not_of(" \t\r\n"));
+                line.erase(line.find_last_not_of(" \t\r\n") + 1);
+
+                if (!line.empty()) {
+                    file->add(getRecord_avl<string>(line));
+                }
+            }
+
+            std::cout << "-- End --" << std::endl;
+            delete file;
+            cout << "Se creo la tabla correctamente" << endl;
+            res.push_back("Se creo la tabla correctamente");
+        } else if (matches[3].str() == "sequential") {
+            auto* file = new SequentialFile<Record_avl<string>, string>(matches[1].str(), matches[1].str());
+            std::ifstream csvFile(matches[2].str());
+            std::string line;
+
+            if (!csvFile.is_open()) {
+                std::cerr << "No se pudo abrir el archivo: " << matches[2].str() << std::endl;
+            }
+
+            // Saltar el encabezado
+            std::getline(csvFile, line);
+
+            while (std::getline(csvFile, line)) {
+                // Eliminar espacios en blanco al inicio y al final de la línea
+                line.erase(0, line.find_first_not_of(" \t\r\n"));
+                line.erase(line.find_last_not_of(" \t\r\n") + 1);
+
+                if (!line.empty()) {
+                    file->add(getRecord_avl<string>(line));
+                }
+            }
+
+            std::cout << "-- End --" << std::endl;
             delete file;
             cout << "Se creo la tabla correctamente" << endl;
             res.push_back("Se creo la tabla correctamente");
@@ -195,7 +243,7 @@ private:
             }
             else if(extract_type(matches[1].str()) == 1) {
                 cout << "Table Search: " << matches[1].str() << std::endl;
-                auto* file = new AVLFile<Record<string>, string>(matches[1].str());
+                auto* file = new AVLFile<Record_avl<string>, string>(matches[1].str());
                 vector<string> range = extraerNumerosEntre(matches[4].str());
                 cout << "Key: " << range[0] << " " << range[1]  << std::endl;
                 const vector<string> result = file->rangeSearch(range[0], range[1]);
@@ -226,7 +274,16 @@ private:
             }
             else if(extract_type(matches[1].str()) == 1) {
                 cout << "Table Search: " << matches[1].str() << std::endl;
-                auto* file = new AVLFile<Record<string>, string>(matches[1].str());
+                auto* file = new AVLFile<Record_avl<string>, string>(matches[1].str());
+                cout << "Key: " << matches[4].str() << std::endl;
+                const string result = file->search(matches[4].str());
+                cout << "Find Result: " << result << endl;
+                res.push_back(result);
+                cout << "-- End --" << std::endl;
+                delete file;
+            } else if(extract_type(matches[1].str()) == 2) {
+                cout << "Table Search: " << matches[1].str() << std::endl;
+                auto* file = new SequentialFile<Record_avl<string>, string>(matches[1].str(), matches[1].str());
                 cout << "Key: " << matches[4].str() << std::endl;
                 const string result = file->search(matches[4].str());
                 cout << "Find Result: " << result << endl;
@@ -261,8 +318,8 @@ private:
         }
         else if(extract_type(matches[1].str()) == 1) {
             cout << "Table Search: " << matches[1].str() << std::endl;
-            auto* file = new AVLFile<Record<string>, string>(matches[1].str());
-            const bool is_success = file->add(getRecord<string>(matches[2].str()));
+            auto* file = new AVLFile<Record_avl<string>, string>(matches[1].str());
+            const bool is_success = file->add(getRecord_avl<string>(matches[2].str()));
             cout << (is_success? "Se inserto correctamente" + matches[2].str() : "El key se repite o hubo un fallo interno") << std::endl;
             res.push_back(is_success? "Se inserto correctamente" + matches[2].str()  : "El key se repite o hubo un fallo interno");
             cout << "-- End --" << std::endl;
@@ -295,7 +352,7 @@ private:
         }
         else if(extract_type(matches[1].str()) == 1) {
             cout << "Table Search: " << matches[1].str() << std::endl;
-            auto* file = new AVLFile<Record<string>, string>(matches[1].str());
+            auto* file = new AVLFile<Record_avl<string>, string>(matches[1].str());
             cout << "Key: " << matches[3].str() << std::endl;
             const bool is_success = file->remove(matches[3].str());
             cout << (is_success? "Se Elimino correctamente el registro con key " + matches[3].str()  : "Ocurrio un error, intenta de nuevo") << std::endl;
@@ -345,8 +402,9 @@ public:
 
 int main() {
     SQLCompiler compiler;
-    std::string query_create_hash = "create table Customer from file \"../datos_small.csv\" using index hash(\"Codigo\");";
-    std::string query_create_avl = "create table CustomerAVL from file \"../datos_small.csv\" using index avl(\"Codigo\");";
+    std::string query_create_hash = "create table customer from file \"../datos_small.csv\" using index hash(\"Codigo\");";
+    std::string query_create_avl = "create table customeravl from file \"../datos_small.csv\" using index avl(\"Codigo\");";
+    std::string query_create_sq = "create table customersqf from file \"../datos_small.csv\" using index sequential(\"Codigo\");";
     std::string query_find1_hash = "select from Customer where Codigo = 1;";
     std::string query_find1_avl = "select from CustomerAVL where Codigo = 1;";
     std::string query_range_hash = "select from Customer where Codigo between 22 and 32;";
@@ -362,6 +420,8 @@ int main() {
     compiler.processQuery(query_create_hash);
     cout << endl;
     compiler.processQuery(query_create_avl);
+    cout << endl;
+    //compiler.processQuery(query_create_sq);
     cout << endl;
 
     compiler.processQuery(query_find1_hash);

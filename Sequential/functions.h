@@ -84,6 +84,10 @@ inline bool menor_igual(const char* str1, const char* str2) {
     return strcmp(str1, str2) <= 0;
 }
 
+inline bool menor_igual(string str1, string str2) {
+    return strcmp(str1.c_str(), str2.c_str()) <= 0;
+}
+
 inline bool menor_igual(long str1, long str2) {
     return (str1 <= str2);
 }
@@ -108,6 +112,10 @@ inline bool igual_igual(const char* str1, const char* str2) {
     return strcmp(str1, str2) == 0;
 }
 
+inline bool igual_igual(string str1, string str2) {
+    return strcmp(str1.c_str(), str2.c_str()) == 0;
+}
+
 inline bool igual_igual(int str1, int str2) {
     return (str1 == str2);
 }
@@ -130,6 +138,10 @@ inline bool igual_igual(long str1, long str2) {
 
 inline bool menor(const char* str1, const char* str2) {
     return strcmp(str1, str2) < 0;
+}
+
+inline bool menor(string str1, string str2) {
+    return strcmp(str1.c_str(), str2.c_str()) < 0;
 }
 
 inline bool menor(int str1, int str2) {

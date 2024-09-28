@@ -9,8 +9,15 @@
 #include "Record.h"
 #include "functions.h"
 #include "methods.h"
+#include "parent.h"
 
 using namespace std;
+
+template<size_t N>
+std::string to_string(const char (&arr)[N]) {
+    return std::string(arr, std::find(arr, arr + N, '\0'));
+}
+
 
 template<typename R>
 struct Entry {
@@ -44,7 +51,7 @@ struct Entry {
 };
 
 template <typename R, typename T>
-class SequentialFile: public MethodSelector<R> {
+class SequentialFile: public MethodSelector<R>, public FileParent<T> {
 private:
     string mainFilename;
     string auxFilename;
@@ -65,9 +72,9 @@ public:
         }
     }
 
-    SequentialFile(string mainFilename, string auxFilename) {
-        this->mainFilename = mainFilename;
-        this->auxFilename = auxFilename;
+    SequentialFile(string mainFilename, string auxFilename) : FileParent<T>(mainFilename, mainFilename) {
+        this->mainFilename = mainFilename + "_data";
+        this->auxFilename = auxFilename + "_aux";
 
         ifstream mainFile(mainFilename, ios::binary);
         if (!mainFile) {
@@ -78,8 +85,31 @@ public:
             newMainFile.write((char*)&isMain, sizeof(bool));
             newMainFile.close();
         }
+
+        this->create_headers_basic(2);
     }
 
+    bool add(string recordS) {
+        istringstream lineStream(recordS);
+        string line, id = "", field;
+        string data = "";
+        int count = 0;
+        while (getline(lineStream, field, ',')) {
+            if (count == 0) {
+                id = field;
+            } else {
+                if (data != "")
+                    data += ",";
+                data += field;
+            }
+
+            count++;
+        }
+        if (data != "" || id != "") {
+            R record(id, data.c_str());
+            this->add(record);
+        }
+    }
 
     bool add(R Nuevorecord) override {
 
@@ -114,7 +144,7 @@ public:
         int SizeAux=auxFile.tellg()/sizeof(Entry<R>);
 
         // if(FirstRecord.id>=NuevoRegistro.id){ NuevoRegistro.id <= FirstRecord.id
-        if ( menor_igual(NuevoRegistro.record.key, FirstRecord.record.key) ) {
+        if ( menor_igual(to_string(NuevoRegistro.record.key), to_string(FirstRecord.record.key)) ) {
             if(HisMain){
                 NuevoRegistro.nextPF=HnextPF;
                 NuevoRegistro.isMain=HisMain;
@@ -135,7 +165,7 @@ public:
                 ifstream auxFile(auxFilename, ios::binary | ios::app);
                 auxFile.seekg(HnextPF*sizeof(Entry<R>));
                 auxFile.read((char*)&PrevioRecord,sizeof(Entry<R>));
-                if ( menor(NuevoRegistro.record.key, PrevioRecord.record.key) ) {
+                if ( menor(to_string(NuevoRegistro.record.key), to_string(PrevioRecord.record.key)) ) {
               //if(PrevioRecord.id>NuevoRegistro.id){ // NuevoRegistro.id < PrevioRecord.id
                     NuevoRegistro.nextPF=HnextPF;
                     NuevoRegistro.isMain=false;
@@ -146,7 +176,7 @@ public:
                     Entry<R> SPrevioRecord;
                     auxFile.seekg(PrevioRecord.nextPF*sizeof(Entry<R>));
                     auxFile.read((char*)&SPrevioRecord,sizeof(Entry<R>));
-                    while( menor_igual(SPrevioRecord.record.key, NuevoRegistro.record.key) and !SPrevioRecord.isMain ) {
+                    while( menor_igual(to_string(SPrevioRecord.record.key), to_string(NuevoRegistro.record.key)) and !SPrevioRecord.isMain ) {
                     // while(SPrevioRecord.id<=NuevoRegistro.id and !SPrevioRecord.isMain){
                         posPrevio=PrevioRecord.nextPF;
                         PrevioRecord=SPrevioRecord;
@@ -194,7 +224,7 @@ public:
             medio = (inicio + fin) / 2;
             mainFile.seekg(medio * sizeof(Entry<R>) + sizeof(int) + sizeof(bool));
             mainFile.read((char *) &record, sizeof(Entry<R>));
-            if ( menor(record.record.key, NuevoRegistro.record.key) ) {
+            if ( menor(to_string(record.record.key), to_string(NuevoRegistro.record.key)) ) {
             //if(record.id<NuevoRegistro.id){
                 inicio = medio + 1;
                 pos=medio;
@@ -204,7 +234,7 @@ public:
                 fin = medio - 1;
                 pos=medio-1;
             }
-            if ( igual_igual(record.record.key, NuevoRegistro.record.key) ) {
+            if ( igual_igual(to_string(record.record.key), to_string(NuevoRegistro.record.key)) ) {
             //if(record.id==NuevoRegistro.id){
                 PrevRecord=record;
                 pos=medio;
@@ -219,14 +249,14 @@ public:
             mainFile.seekg(pos * sizeof(Entry<R>) + sizeof(int) + sizeof(bool), ios::beg);
             mainFile.read((char *) &PrevRecord, sizeof(Entry<R>));
         }
-        while ( !PrevRecord.isMain and menor(PrevRecord.record.key, NuevoRegistro.record.key) ) {
+        while ( !PrevRecord.isMain and menor(to_string(PrevRecord.record.key), to_string(NuevoRegistro.record.key)) ) {
         //while(!PrevRecord.isMain and PrevRecord.id<NuevoRegistro.id){
             lastMain=false;
             ifstream auxFile1(auxFilename, ios::binary | ios::app);
             auxFile1.seekg(PrevRecord.nextPF*sizeof(Entry<R>));
             auxFile1.read((char*)&record, sizeof(Entry<R>));
             auxFile1.close();
-            if ( menor_igual( record.record.key, NuevoRegistro.record.key ) ) {
+            if ( menor_igual( to_string(record.record.key), to_string(NuevoRegistro.record.key) ) ) {
             //if(record.id<=NuevoRegistro.id){
                 pos=PrevRecord.nextPF;
                 PrevRecord=record;
@@ -435,10 +465,10 @@ public:
                 pos = medio;
                 break;
             }
-            else if ( menor(record.record.key, key) ) {
+            else if ( menor(to_string(record.record.key), key) ) {
             // else if (record.record.key < key) {
                 inicio = medio + 1;
-                if ( menor(PrevRecord.record.key, record.record.key) ) { // 
+                if ( menor(to_string(PrevRecord.record.key), to_string(record.record.key)) ) { //
                 // if (key- record.record.key < key - PrevRecord.record.key) { //  record.key  > prevredc
                     PrevRecord = record;
                 }
@@ -492,7 +522,12 @@ public:
         return true;
     }
 
-    pair<R, bool> search(T key) override {
+    string find(T key) {
+        // TODO
+        // read from output file
+    }
+
+    string search(T key) {
         vector<Entry<R>> result;
         ifstream mainFile(mainFilename, ios::binary);
         if (!mainFile.is_open()) R();
@@ -514,17 +549,17 @@ public:
             // if (record.record.key == key) {
                 if (record.nextPF == -2){
                     // cout << "El Entry se encuentra eliminado" <<endl;
-                    return make_pair(R(), false);
+                    return "Key not found";
                 }
                 else{
                     result.push_back(record);
-                    return make_pair(result[0].record, true);
+                    return result[0].record.getData();
                 }
             } 
-            else if ( menor(record.record.key, key) ) {
+            else if ( menor(to_string(record.record.key), key) ) {
             // else if (record.record.key < key) {
                 inicio = medio + 1;
-                if ( menor(PrevRecord.record.key, record.record.key) ) {
+                if ( menor(to_string(PrevRecord.record.key), to_string(record.record.key)) ) {
                 // if (key - record.record.key < key - PrevRecord.record.key) { // -recr < -prev  rec > prev
                     PrevRecord = record;
                 }
@@ -534,13 +569,13 @@ public:
         }
 
         ifstream auxFile(auxFilename, ios::binary);
-        if (!auxFile.is_open()) return make_pair(R(), false);
+        if (!auxFile.is_open()) return "Key not found";
 
         while(auxFile.read((char*)&record, sizeof(Entry<R>))){
             if ( igual_igual(PrevRecord.record.key, key) ) {
             // if (PrevRecord.record.key == key) {
                 result.push_back(PrevRecord);
-                return make_pair(result[0].record, true);
+                return result[0].record.getData();
             }
         }
 
@@ -548,11 +583,16 @@ public:
 
         mainFile.close();
         auxFile.close();
-        return make_pair(R(), false);
+        return "Key not found";
     }
 
-    vector<R> rangeSearch(T beginkey, T endkey) override {
-        vector<R> result;
+    vector<string> range_search(T keyMin, T keyMax) {
+        // TODO
+        // Read from file
+    }
+
+    vector<string> rangeSearch(T beginkey, T endkey) {
+        vector<string> result;
         ifstream mainFile(mainFilename, ios::binary);
         if (!mainFile.is_open()) throw runtime_error("No se pudo abrir el archivo main");
 
@@ -587,7 +627,7 @@ public:
             }
             if ( menor_igual(beginkey, record.record.key) ) {
             // if (record.record.key >= beginkey) {
-                result.push_back(record.record);
+                result.push_back(record.record.getData());
                 found = true;
             }
             if(record.nextPF==-1)break;
@@ -630,7 +670,8 @@ public:
     void display_all() override {
       vector<R>vec = load();
       for (int i = 0; i < vec.size(); i++) {
-        vec[i].print();
+        //vec[i].showData();
+          cout << vec[i].getData() << endl;
       }
       cout << endl;
       return;
