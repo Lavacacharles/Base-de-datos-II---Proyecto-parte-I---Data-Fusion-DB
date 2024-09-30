@@ -4,19 +4,24 @@ int main(){
     string Filename = "data.dat"; string IndexFilaname = "index.dat";
     CrearArchivo(Filename, IndexFilaname);
     BPlusTree arbol;
-    string csvFile = "prueba.csv";
-    arbol.ReadCSV(csvFile, 5);
+    string csvFile = "test.csv";
+    arbol.ReadCSV(csvFile, NCOLS);
     cout << "acabo de scanear el csv" << endl;
-    PageRecord b = arbol.ReadBucket(0);
-
-    cout << "Leer prueba " << endl;
-    cout << b.nRegistros << endl;
-    for(int i = 0; b.nRegistros; i++){
-        cout << endl;
-        b.registros[i].showData();
-        cout << endl;
-    }
     cout << "leera valores" << endl;
     arbol.ReadValues();
+    return 0;
+}
+int oc(){
+    string index = "index.dat";
+    ifstream IndexFile; IndexFile.open(index, ios::binary);
+    Index prueba;
+    IndexFile.seekg(52);
+    IndexFile.read((char *)&prueba, sizeof(Index));
+    
+    cout << "prueba.isLeaf: " << prueba.isLeaf << endl;
+    cout << "prueba.nRegistros: " << prueba.nRegistros << endl;
+    
+
+    IndexFile.close();
     return 0;
 }

@@ -6,11 +6,12 @@
 #include <vector>
 
 
-#define KEY_INDEX 2
+#define KEY_INDEX 0
 #define ORDER 5
 #define PAGE_SIZE 20
 #define NELEMENTS 4
-#define NCOLS 5
+#define NCOLS 1
+#define DATATYPE 1
 
 using namespace std;
 
@@ -31,7 +32,7 @@ struct Record {
             word[i][254] = '\0';
         }
         data = word;
-        showData();
+        // showData();
     }
     ~Record(){
         // for(int i = 0; data[i] != nullptr; i++){
@@ -54,7 +55,7 @@ struct PageRecord{
     int next;
     int prev;
     int nRegistros;
-    Record registros[ORDER];
+    Record registros[PAGE_SIZE];
     PageRecord(){
         next = -1;
         prev = -1;
@@ -79,21 +80,79 @@ struct Index {
 
 struct BPlusTree{
     long pos_root;
+    bool IsPage;
     string filename;
     string Indexfilename;
     vector<int> freeList;
     vector<int> IndexFreeList;
+    // BPlusTree(){
+    //     pos_root = 0;
+    //     filename = "data.dat";
+    //     Indexfilename = "index.dat";
+    //     WriteRoot(pos_root);
+    //     freeList.push_back(0);
+    //     AjustarFreeList();
+    //     IndexFreeList.push_back(sizeof(Index));
+    // }
     BPlusTree(){
-        pos_root = 0;
-        filename = "data.dat";
-        Indexfilename = "index.dat";
-        WriteRoot(pos_root);
-        freeList.push_back(24 + 520*NCOLS);
-        IndexFreeList.push_back(sizeof(Index));
+        bool IsPage_ = true;
+        if(IsPage_){
+            IsPage = true;
+            PageRecord Bucket;
+            // Bucket.nRegistros += 1;
+            pos_root = 0;
+            filename = "data.dat";
+            Indexfilename = "index.dat";
+            // WriteRoot(pos_root);
+            freeList.push_back(12 + 255*NCOLS*PAGE_SIZE);
+            IndexFreeList.push_back(0);
+            WriteBucket(pos_root, Bucket);
+            // AjustarFreeList();
+        }
+        else {
+            IsPage = false;
+            // pos_root = 0;
+            filename = "data.dat";
+            Indexfilename = "index.dat";
+            pos_root = 0;
+            // WriteRoot(pos_root);
+            // freeList.push_back(12 + 255*NCOLS);
+            // IndexFreeList.push_back(0);
+            // WriteBucket(pos_root, Bucket);
+            // AjustarFreeList();
+        }
+    }
+    BPlusTree(bool IsPage_){
+        if(IsPage_){
+            IsPage = true;
+            PageRecord Bucket;
+            Bucket.nRegistros += 1;
+            pos_root = 0;
+            filename = "data.dat";
+            Indexfilename = "index.dat";
+            // WriteRoot(pos_root);
+            freeList.push_back(12 + 255*NCOLS);
+            IndexFreeList.push_back(0);
+            WriteBucket(pos_root, Bucket);
+            // AjustarFreeList();
+        }
+        else {
+            IsPage = false;
+            // pos_root = 0;
+            filename = "data.dat";
+            Indexfilename = "index.dat";
+            pos_root = 0;
+            // WriteRoot(pos_root);
+            // freeList.push_back(12 + 255*NCOLS);
+            // IndexFreeList.push_back(0);
+            // WriteBucket(pos_root, Bucket);
+            // AjustarFreeList();
+        }
     }
     BPlusTree(string filename_, string Indexfilename_): filename(filename_), Indexfilename(Indexfilename_), pos_root(0){}
     
     void AjustarFreeList();
+    void AjustarIndexFreeList();
 
     void WriteRoot(int);
     void WriteIndex(int, Index);
