@@ -8,12 +8,12 @@
 #include <string>
 #include <vector>
 
-#define HEAD_FILE 8;
+#define HEAD_FILE 16;
 #define BYTES_TO_NEXTDEL 0
-#define BYTES_TO_LEFT 4
-#define BYTES_TO_RIGHT 8
-#define BYTES_TO_HEIGHT 12
-#define BYTES_TO_DATA 16
+#define BYTES_TO_LEFT 8
+#define BYTES_TO_RIGHT 16
+#define BYTES_TO_HEIGHT 24
+#define BYTES_TO_DATA 28
 
 using namespace std;
 
@@ -67,15 +67,19 @@ bool operator<(const string &str, const char *charArray) {
 }
 
 template <class R, class T> struct NodeAVL {
-  long nextDel;
-  long left;
-  long right;
-  int height;
+  long nextDel=-1;
+  long left=-1;
+  long right=-1;
+  int height=0;
   R data;
   NodeAVL(R record)
-      : data(record), left(-1), right(-1), height(0), nextDel(-1) {}
+      : data(record){}
   NodeAVL() {}
   T getKey() { return data.getKey(); }
+
+  string getData() {
+    return "ND: "+to_string(nextDel) + " L:" + to_string(left) + " R: " + to_string(right) + " H:" + to_string(height)+ " D:" + data.getData();
+  }
 };
 
 struct HeadAVL {
@@ -89,7 +93,8 @@ struct LeavesAVL {
 };
 
 template <class R, class T> long getPosFisical(long pos) {
-  return pos * sizeof(NodeAVL<R, T>) + HEAD_FILE;
+  int size_node = (long)sizeof(NodeAVL<R, T>);
+  return (pos * size_node)+HEAD_FILE;
 }
 
 template <class R, class T> class AVLFile : public FileParent<T> {
@@ -107,13 +112,11 @@ template <class R, class T> class AVLFile : public FileParent<T> {
     }
     int hLeft = -1, hRight = -1;
     if (leaves.left > -1) {
-      file.seekg(getPosFisical<R, T>(leaves.left) + BYTES_TO_HEIGHT, ios::beg);
-      file.read((char *)&hLeft, sizeof(int));
+      hLeft = getHeight(leaves.left);
     }
 
     if (leaves.right > -1) {
-      file.seekg(getPosFisical<R, T>(leaves.right) + BYTES_TO_HEIGHT, ios::beg);
-      file.read((char *)&hRight, sizeof(int));
+      hRight = getHeight(leaves.right);
     }
     file.close();
     return hLeft - hRight;
@@ -304,7 +307,7 @@ template <class R, class T> class AVLFile : public FileParent<T> {
       if (nodeRoot.left == -1 && nodeRoot.right == -1) {
         nodeRoot.nextDel = head.nextDel;
         head.nextDel = posRoot;
-        write<NodeAVL<R, T>>(getPosFisical<R, T>(posRoot), nodeRoot);
+        write<long>(getPosFisical<R, T>(posRoot)+BYTES_TO_NEXTDEL, nodeRoot.nextDel);
         return make_pair(true, -1);
       }
       if (nodeRoot.left == -1) {
@@ -327,6 +330,7 @@ template <class R, class T> class AVLFile : public FileParent<T> {
       write<long>(getPosFisical<R, T>(posRoot) + BYTES_TO_RIGHT, result.second);
     }
 
+    nodeRoot = read<NodeAVL<R, T>>(getPosFisical<R, T>(posRoot));
     int height = max(getHeight(nodeRoot.left), getHeight(nodeRoot.right)) + 1;
     write<int>(getPosFisical<R, T>(posRoot) + BYTES_TO_HEIGHT, height);
 
@@ -454,44 +458,35 @@ public:
     int count = 0;
     while (file.peek() != EOF) {
       NodeAVL<R, T> node;
+      cout <<file.tellg()<<"->";
       file.read((char *)&node, sizeof(NodeAVL<R, T>));
-      cout << count << " : ";
+      cout<< count << " : ";
       cout << "Left(" << node.left << ") - Right(" << node.right;
       cout << ") - Height(" << node.height << ") - nextDel(" << node.nextDel
            << ")\t";
-      node.data.show();
+      cout<<node.data.getData()<<endl;
       cout << endl;
       count++;
     }
   }
 
-  bool add(string recordS) {
-    istringstream lineStream(recordS);
-    string line, id = "", field;
-    string data = "";
-    int count = 0;
-    while (getline(lineStream, field, ',')) {
-      if (count == 0) {
-        id = field;
-      } else {
-        if (data != "")
-          data += ",";
-        data += field;
-      }
-
-      count++;
-    }
+  bool add(string line) {
+    string id = "", data="", field;
+    istringstream lineStream(line);
+    getline(lineStream, id, ',');
+    data = line.substr(id.length() + 1);
     if (data != "" || id != "") {
-      R record(id, data.c_str());
-      this->add(record);
+      R record(convert<T>(id), data.c_str());
+      return this->addR(record);
     }
+    return false;
   }
 
-  bool add(R record) {
+  bool addR(R record) {
     auto root = insert(head.root, record);
     if (root.first) {
-      HeadAVL nodeRoot = read<HeadAVL>(0);
-      if (head.root != root.second || head.nextDel != nodeRoot.nextDel) {
+      HeadAVL headRead = read<HeadAVL>(0);
+      if (head.root != root.second || head.nextDel != headRead.nextDel) {
         if (head.root != root.second)
           head.root = root.second;
         rewriteHead();
@@ -502,6 +497,7 @@ public:
     cout << (root.first ? "Insercion correcta del " : "Ya existe el ")
          << "registro con key(" << record.getKey() << ")\n";
     */
+    this->viewFile();
     return root.first;
   }
 

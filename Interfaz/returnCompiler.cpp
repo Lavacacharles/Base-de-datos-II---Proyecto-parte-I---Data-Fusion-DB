@@ -8,7 +8,8 @@
 #include "hash.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include "SequentialFile.h"
+#include "Sequential/SequentialFile.h"
+#include "Sequential/Record.h"
 namespace py = pybind11;
 using namespace std;
 
@@ -194,7 +195,7 @@ private:
                     line.erase(line.find_last_not_of(" \t\r\n") + 1);
 
                     if (!line.empty()) {
-                        file->add(getRecord_avl<string>(line));
+                    file->addR(getRecord_avl<string>(line));
                     }
                 }
 
@@ -345,7 +346,7 @@ private:
         else if(extract_type(matches[1].str()) == 1) {
             cout << "Table Search: " << matches[1].str() << std::endl;
             auto* file = new AVLFile<Record_avl<string>, string>(matches[1].str());
-            const bool is_success = file->add(getRecord_avl<string>(matches[2].str()));
+            const bool is_success = file->addR(getRecord_avl<string>(matches[2].str()));
             cout << (is_success? "Se inserto correctamente" + matches[2].str() : "El key se repite o hubo un fallo interno") << std::endl;
             res.push_back(is_success? "Se inserto correctamente" + matches[2].str()  : "El key se repite o hubo un fallo interno");
             cout << "-- End --" << std::endl;
