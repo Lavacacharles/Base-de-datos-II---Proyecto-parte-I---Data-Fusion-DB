@@ -565,7 +565,9 @@ Esta interfaz de usuario (UI) ha sido desarrollada en Python utilizando PyQt5 pa
    - Asegúrate de instalar un compilador de C++ y Python en tu entorno WSL:
     ```bash
      sudo apt install g++
-     sudo apt install python3 
+     sudo apt install python3
+    sudo apt install python3-dev
+    sudo apt install cmake
      ```
    - También es recomendable instalar VsCode:
      ```bash
