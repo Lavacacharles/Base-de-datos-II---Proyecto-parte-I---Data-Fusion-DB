@@ -1,0 +1,11 @@
+id,url,source,label,url_length
+2,nomadfactory.com,Majestic,legitimate,16
+9,yourdailydish.com,Majestic,legitimate,17
+8,bunkrstatic.b-cdn.net,Cisco-Umbrella,legitimate,21
+7,cloudshell.me-south-1.aws.amazon.com,Cisco-Umbrella,legitimate,36
+1,quintadonoval.com,Majestic,legitimate,17
+3,tvarenasport.com,Majestic,legitimate,16
+5,haymarketbeer.com,Majestic,legitimate,17
+0,apaceast.cloudguest.central.arubanetworks.com,Cisco-Umbrella,legitimate,45
+4,widget.cluster.groovehq.com,Cisco-Umbrella,legitimate,27
+6,oslosportslager.no,Majestic,legitimate,18
