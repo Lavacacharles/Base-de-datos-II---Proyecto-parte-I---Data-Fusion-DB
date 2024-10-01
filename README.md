@@ -721,21 +721,17 @@ algoritmo.
 | Sequential File    |       |       |        |         |          |             |
 | Extendible Hashing | 0.001 | 0.389 | 0.776  | 1.438   | 3.456    | 20.910      |
 
-#### Gráfica de complejidades
-
-Visualización de los tiempos de compilación entre la creación de tablas usando la técnica AVL y la indexación Extendicle Hashing
- 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/build_compare_2.png" width="300"/>
-
-🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
-
-#### Análisis
-
+#### Análisis de gráfica de complejidades
 Como podemos notar, el tiempo de crecimiento de ambas estructuras es logarítmico, sin embargo, el crecimiento es más lento para el hash debido a que en esté va a iterar menos respecto al volumen de datos y realiza menos accesos a la memoría secundaria.
 
 - El hash va a llegar al bucket indicado por el índice y si es de que el bucket tiene espacio, solo se va a insertar allí mismo, pero cuando se aumenta el volumen incrementa la probabilidad de encadenar los buckets. Por cada bucket de la cadena, se incrementa el tiempo, pero esto es respecto al factor, lo cual mitiga el efecto del volumen. Asimismo, se debe mencionar que por cada lectura de bucket se accede el archivo, lo cual puede demorar. Por otro lado, lo que también va a pasar normalmente es que se va a crecer dinámicamente realizando particiones, en lo que se va a sobrescribir los punteros del archivo índice.
 
 - El AVL va a viajar por el árbol, así que cuando incremente el volumen de los datos, va a realizar un viaje más largo. Como cada nodo es obtenido leyendo del archivo, el acceso a memoria secundaria aumenta considerablemente respecto a la cantidad de datos. Así mismo, si hay rotaciones se escribe en el archivo varias veces, lo cual demora más y se hace más propenso cuando el volumen de datos incrementa. El tiempo es considerablemente mayor cuando el archivo de datos para generar la tabla está desordenado. Se recomienda primero  ordenar el archivo para luego generar el AVLFile.
+  
+ 
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/build_compare_2.png" width="300"/>
+
+🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
 
 ### Insertar registro
 
@@ -747,24 +743,25 @@ Como podemos notar, el tiempo de crecimiento de ambas estructuras es logarítmic
 | Sequential File    | 0.181 | 2.035 | 17.08 | 235.25 | 2796.80 | --- |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000 |
 
-#### Gráfica de complejidades
+#### Análisis de gráfica de complejidades
 
 #### Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)
 En el siguiente gráfico se puede observar la diferencia entre el tiempo de ejecución de una insercción con la técnica AVLFile e indexacción de tipo hash.
 Asimismo, se visualiza la complejidad O(1) para la inserción con hash, mientras que al usar el AVL se va formando una funcion logaritmica.
 Aunque hablamos de microsegundos, la diferencia se hace visible cuando la cantidad de datos aumenta.
+
 <img alt="Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)" height="200" src="images/add_compare_2.png" width="300"/>
 
-#### Gráfico de evolución de tiempo ejecución vs. data
+🟠 Extendible Hashing   🔵 AVL File
+
+#### Gráfico de evolución de tiempo ejecución vs. data (3 técnicas)
 
 En el siguiente gráfico se compara la diferencia entre el tiempo de ejecución de una inserción entre las 3 técnicas.
 Se visualiza que, para insercción, el sequential file no es eficiente a diferencias del AVL y Extendible Hashing
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/add_compare_3.png" width="300"/>
 
-#### Análisis
-
-Al insertar individualmente, se nota que los tiempos también crecen logarítmicamente y se nota la corta duración de una inserción para el hash respecto a las otras formas. Las razones para estos tiempos son explicadas en el análisis de construir tabla.
+🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
 
 ### Eliminar registro
 
@@ -776,17 +773,26 @@ Al insertar individualmente, se nota que los tiempos también crecen logarítmic
 | Sequential File    | 0.007 | 0.020 | 0.042 | 0.361 | 4.056  | ---         |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000       |
 
-#### Gráfica de complejidades
+#### Análisis de gráfica de complejidades
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="https://costaricamakers.com/wp-content/uploads/2022/03/image-5.png" width="300"/>
+#### Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)
 
-#### Análisis
-
-En el caso del remove, se ve que todos los tiempos son pequeños y el incremento es mínimo, por lo que no es sencillo determinar su notación. En el caso del hash hay un incremento logarítmico, pero este está en el rango de los microsegundos, así que no se aprecia.
-
+- En el caso del remove, se ve que todos los tiempos son pequeños y el incremento es mínimo, por lo que no es sencillo determinar su notación. En el caso del hash hay un incremento logarítmico, pero este está en el rango de los microsegundos, así que no se aprecia.
 - Igual que con el insert, el hash va a tener problemas cuando incremente el volumen de datos porque se va a aumentar las probabilidades de colisiones. Sin embargo, para el remove también se tiene que liberar el bucket cuando este no es usado, y si se puede realizar un merge con el bucket hermano, se tiene que escribir en el índice igual que con la partición.
-- AVL ...
-- Sequential file ...
+- De la misma forma, la inserción en un AVL tiene la misma complejidad logaritmica que va aumentando con N cantidad de datos
+
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/remove_compare_2.png" width="300"/>
+
+🟠 Extendible Hashing   🔵 AVL File
+
+#### Gráfico de evolución de tiempo ejecución vs. data (3 técnicas)
+
+En el gráfico, se visualiza la diferencia entre los tiempo de ejecución del sequential file con respecto a las otras dos técnicas implementadas. 
+
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/remove_compare_3.png" width="300"/>
+
+🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
+
 
 ### Búsqueda de registro
 
@@ -798,13 +804,24 @@ En el caso del remove, se ve que todos los tiempos son pequeños y el incremento
 | Sequential File    | 0.001 | 0.001 | 0.001  | 0.007 | 0.098 | ---         |
 | Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.003  | 0.051       |
 
-#### Gráfica de complejidades
+#### Análisis de gráfica de complejidades
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="https://costaricamakers.com/wp-content/uploads/2022/03/image-5.png" width="300"/>
-
-#### Análisis
+#### Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)
 
 Para la búsqueda de un registro por llave, se tiene a situaciones similares a los otros casos con crecimiento logarítmicos y de nuevo el hash es el más rápido. Las razones mencionadas en la inserción también son aplicadas aquí, lo que explica el crecimiento similar.
+El AVL alcanza una aparente complejidad lineal con un salto entre la busqueda con 100 y 1000 registros.
+
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/search_compare_2.png" width="300"/>
+
+🟠 Extendible Hashing   🔵 AVL File
+
+#### Gráfico de evolución de tiempo ejecución vs. data (3 técnicas)
+
+En el gráfico, se visualiza la diferencia entre los tiempo de ejecución del sequential file con respecto a las otras dos técnicas implementadas. 
+
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/search_compare_3.png" width="300"/>
+
+🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
 
 ### Búsqueda por rango
 
@@ -817,14 +834,13 @@ Para la búsqueda de un registro por llave, se tiene a situaciones similares a l
 
 #### Gráfica de complejidades
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="https://costaricamakers.com/wp-content/uploads/2022/03/image-5.png" width="300"/>
+#### Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Sequential File)
 
-#### Análisis
+Según la gráfica, la busqueda por rango de un Sequetial File es mucho más eficiente que un AVL File. Esto se da ya que el Sequential File está ordenado y busca los n elementos en un rango. Mientras que el AVL tiene que recorrer el arbol en busca de los elementos en el rango.
 
-Para el search range, también se tiene un crecimiento logarítmico, pero un tiempo pequeño.
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/range_compare_2.png" width="300"/>
 
-- AVl ...
-- Sequential ...
+🟢 Sequential File   🔵 AVL File
 
 # Anexos
 
