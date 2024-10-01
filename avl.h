@@ -416,6 +416,17 @@ template <class R, class T> class AVLFile : public FileParent<T> {
     outputFile << outputString;
   }
 
+  void inorder(long posRoot, vector<string> &result) {
+    if (posRoot == -1)
+        return;
+    NodeAVL<R, T> nodeRoot = read<NodeAVL<R, T>>(getPosFisical<R, T>(posRoot));
+    cout<<"Nodo encontrado: "<<nodeRoot.data.getData()<<endl;
+    inorder(nodeRoot.left, result);
+    cout<<"Pusheando nodo: "<<nodeRoot.data.getData()<<endl;
+    result.push_back(nodeRoot.data.getData());
+    inorder(nodeRoot.right, result);
+  }
+
 public:
   AVLFile(string data_file) : FileParent<T>(data_file, data_file) {
     fstream file(this->data_name);
@@ -497,7 +508,6 @@ public:
     cout << (root.first ? "Insercion correcta del " : "Ya existe el ")
          << "registro con key(" << record.getKey() << ")\n";
     */
-    this->viewFile();
     return root.first;
   }
 
@@ -562,6 +572,13 @@ public:
   */
     return result;
   }
+
+  vector<string> inorder(){
+    vector<string> result={};
+    inorder(head.root,result);
+    return result;
+  }
+
 };
 
 #endif

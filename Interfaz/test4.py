@@ -1,6 +1,6 @@
 # import info
 # import prueba
-import returnCompiler 
+import returnCompiler
 import time
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTabWidget, QTableWidget, \
@@ -20,7 +20,7 @@ def getRecordSelectRange(record):
 class MiSGDB(QWidget):
     def __init__(self):
         super().__init__()
-        
+
         self.setWindowTitle('Mi SGDB')
 
         # Layout principal
@@ -43,15 +43,16 @@ class MiSGDB(QWidget):
         area_texto = QTextEdit()
         area_texto.setText(
             "create table Customer from file \"../datos_small.csv\" using index hash(\"Codigo\");"
-                        )
+        )
         print(area_texto)
-        #Manejo de las tablas: 
+        #Manejo de las tablas:
         tablas_l = []
         try:
             with open('tablas.txt', 'r') as file:
                 tablas = file.readlines()
                 for tabla in tablas:
-                    tabla = tabla.strip()
+                    line = tabla.split(',')
+                    tabla = line[0].strip()
                     if tabla:
                         tablas_l.append(tabla)
                         boton = QPushButton(tabla)
@@ -81,14 +82,14 @@ class MiSGDB(QWidget):
 
 
         ## Para la parte de los headers
-        ## R: Espero q me otorguen un vector de string de headers: 
+        ## R: Espero q me otorguen un vector de string de headers:
         headers_vector = ["Bienvenido"]
         ## R: Para la parte de los registros espero q me den un vector del registro
         ## -> Vector<Records>
-        
+
         # Crear tabla con el tamaño adecuado
         num_rows = 0
-        num_columns = len(headers_vector)  
+        num_columns = len(headers_vector)
 
         # Atributos para el cambio
         # Table
@@ -97,8 +98,8 @@ class MiSGDB(QWidget):
         # Añadir encabezados
         self.result_table.setHorizontalHeaderLabels(headers_vector)
 
-        
-        def get_Lista_From_Char_Vector(record): 
+
+        def get_Lista_From_Char_Vector(record):
             #Retorna los atributos en una lista
             elements= []
             for atributos in record.record:
@@ -113,10 +114,10 @@ class MiSGDB(QWidget):
             boton = QPushButton(nombre_tabla)
             # Agregar el botón al panel lateral
             self.panel_lateral.addWidget(boton)
-        
+
         self.total = 0
         def ejecutar_comando():
-            texto = area_texto.toPlainText() 
+            texto = area_texto.toPlainText()
             print("el texto es: ", texto)
             print("La queri esdfd")
             print("La queri es")
@@ -151,15 +152,13 @@ class MiSGDB(QWidget):
                         boton = QPushButton(nombre_tabla)
                         tablas_l.append(nombre_tabla)
                         self.panel_lateral.addWidget(boton)
-                        with open('tablas.txt', 'a') as file:
-                            file.write(nombre_tabla + '\n')
                         msg = QMessageBox()
                         msg.setIcon(QMessageBox.Information)
                         msg.setWindowTitle("Tabla creada correctamente")
                         msg.setText("Exito")
                         msg.setInformativeText(nombre_tabla + "Creada correctamente")
-                        msg.exec_()  
-                    else: 
+                        msg.exec_()
+                    else:
                         msg = QMessageBox()
                         msg.setIcon(QMessageBox.Warning)
                         msg.setWindowTitle(query[0])
@@ -179,7 +178,7 @@ class MiSGDB(QWidget):
                         print("Entro eeees", query )
 
                         resultado = getRecordSelectRange(query[1])
-                        
+
                         headers_vector = ["atr" + str(i) for i in range(len(resultado[0]))]
                         self.result_table.setColumnCount(len(headers_vector))
                         self.result_table.setHorizontalHeaderLabels(headers_vector)
@@ -187,7 +186,7 @@ class MiSGDB(QWidget):
                         for row_index, registro in enumerate(resultado):
                             for col_index, value in enumerate(registro):
                                 self.result_table.setItem(row_index, col_index, QTableWidgetItem(str(value)))
-                        
+
                     else: #Busqueda normalica
                         print("Busqueda normalica")
                         reultado = getRecordSelect(query[1])
@@ -212,25 +211,25 @@ class MiSGDB(QWidget):
                         msg.setWindowTitle("Inserción correcta")
                         msg.setText("Éxito")
                         msg.setInformativeText("Registro inserttado")
-                        msg.exec_()         
+                        msg.exec_()
                 elif any("REMOVE" in q for q in query) and not any("Invalid" in q for q in query):
-                        msg = QMessageBox()
-                        msg.setIcon(QMessageBox.Information)
-                        msg.setWindowTitle("Eliminación correcta")
-                        msg.setText("Exito")
-                        msg.setInformativeText("Registro Eliminado")
-                        msg.exec_()  
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setWindowTitle("Eliminación correcta")
+                    msg.setText("Exito")
+                    msg.setInformativeText("Registro Eliminado")
+                    msg.exec_()
                 elif any("SEARCH" in q for q in query) and any(",\n" in q for q in query) and len(query) == 2:
-                        print("Removeee")
-                        msg = QMessageBox()
-                        msg.setIcon(QMessageBox.Information)
-                        msg.setWindowTitle("Eliminación??")
-                        msg.setText("Exito")
-                        msg.setInformativeText("Registro Eliminado")
-                        msg.exec_()  
+                    print("Removeee")
+                    msg = QMessageBox()
+                    msg.setIcon(QMessageBox.Information)
+                    msg.setWindowTitle("Eliminación??")
+                    msg.setText("Exito")
+                    msg.setInformativeText("Registro Eliminado")
+                    msg.exec_()
 
-                # }
-                else: 
+                    # }
+                else:
                     print("La quieru es: ",query)
                     headers_vector = ["atr"+str(i) for i in range(len(query))]
                     print("El len de query es", len(query))
@@ -243,9 +242,9 @@ class MiSGDB(QWidget):
                     for i, value in enumerate(query):
                         # Insertar cada valor en la columna correspondiente
                         self.result_table.setItem(0, i, QTableWidgetItem(str(value)))
-                    
-                
-                
+
+
+
             print(queris)
             print("Texto en el área de texto:", texto)
 
@@ -284,7 +283,7 @@ class MiSGDB(QWidget):
 
         # Establecer el layout de la ventana principal
         self.setLayout(layout_principal)
-        
+
 
 
 if __name__ == '__main__':
