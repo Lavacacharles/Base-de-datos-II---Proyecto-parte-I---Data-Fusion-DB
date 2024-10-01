@@ -747,9 +747,18 @@ Como podemos notar, el tiempo de crecimiento de ambas estructuras es logarítmic
 
 #### Gráfica de complejidades
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)" height="200" src="https://drive.google.com/file/d/1VkPJRBdaTwaEKl_WWXeloht8SsXxvEMu/view?usp=sharing" width="300"/>
+#### Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)
+En el siguiente gráfico se puede observar la diferencia entre el tiempo de ejecución de una insercción con la técnica AVLFile e indexacción de tipo hash.
+Asimismo, se visualiza la complejidad O(1) para la inserción con hash, mientras que al usar el AVL se va formando una funcion logaritmica.
+Aunque hablamos de microsegundos, la diferencia se hace visible cuando la cantidad de datos aumenta.
+<img alt="Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)" height="200" src="images/add_compare_2.png" width="300"/>
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="https://drive.google.com/file/d/1lD1mDfFALIP7S9X5EfRbVwikkKClkItj/view?usp=drive_link" width="300"/>
+#### Gráfico de evolución de tiempo ejecución vs. data
+
+En el siguiente gráfico se compara la diferencia entre el tiempo de ejecución de una insercción entre las 3 técnicas.
+Se visualiza que, para insercción, el sequential file no es eficiente a diferencias del AVL y Extendible Hashing
+
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/add_compare_3.png" width="300"/>
 
 
 
