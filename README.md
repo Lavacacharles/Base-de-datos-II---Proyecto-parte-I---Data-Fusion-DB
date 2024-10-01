@@ -838,7 +838,7 @@ En el gráfico, se visualiza la diferencia entre los tiempo de ejecución del se
 
 Según la gráfica, la busqueda por rango de un Sequetial File es mucho más eficiente que un AVL File. Esto se da ya que el Sequential File está ordenado y busca los n elementos en un rango. Mientras que el AVL tiene que recorrer el arbol en busca de los elementos en el rango.
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/range_compare_2.png" width="300"/>
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/range_compare_3.png" width="300"/>
 
 🟢 Sequential File   🔵 AVL File
 
