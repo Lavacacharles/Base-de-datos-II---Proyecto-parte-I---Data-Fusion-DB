@@ -723,7 +723,10 @@ algoritmo.
 
 #### Gráfica de complejidades
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="https://costaricamakers.com/wp-content/uploads/2022/03/image-5.png" width="300"/>
+- ![#0000FF](https://via.placeholder.com/15/0000FF/000000?text=+) **Azul**: AVL File
+- ![#FFA500](https://via.placeholder.com/15/FFFF00/000000?text=+) **Amarillo**: Extendible Hashing
+ 
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/build_compare_2.png" width="300"/>
 
 #### Análisis
 
@@ -732,8 +735,6 @@ Como podemos notar, el tiempo de crecimiento de ambas estructuras es logarítmic
 - El hash va a llegar al bucket indicado por el índice y si es de que el bucket tiene espacio, solo se va a insertar allí mismo, pero cuando se aumenta el volumen incrementa la probabilidad de encadenar los buckets. Por cada bucket de la cadena, se incrementa el tiempo, pero esto es respecto al factor, lo cual mitiga el efecto del volumen. Asimismo, se debe mencionar que por cada lectura de bucket se accede el archivo, lo cual puede demorar. Por otro lado, lo que también va a pasar normalmente es que se va a crecer dinámicamente realizando particiones, en lo que se va a sobrescribir los punteros del archivo índice.
 
 - El AVL va a viajar por el árbol, así que cuando incremente el volumen de los datos, va a realizar un viaje más largo. Como cada nodo es obtenido leyendo del archivo, el acceso a memoria secundaria aumenta considerablemente respecto a la cantidad de datos. Así mismo, si hay rotaciones se escribe en el archivo varias veces, lo cual demora más y se hace más propenso cuando el volumen de datos incrementa. El tiempo es considerablemente mayor cuando el archivo de datos para generar la tabla está desordenado. Se recomienda primero  ordenar el archivo para luego generar el AVLFile.
-
-- El sequential file ...
 
 ### Insertar registro
 
@@ -755,12 +756,10 @@ Aunque hablamos de microsegundos, la diferencia se hace visible cuando la cantid
 
 #### Gráfico de evolución de tiempo ejecución vs. data
 
-En el siguiente gráfico se compara la diferencia entre el tiempo de ejecución de una insercción entre las 3 técnicas.
+En el siguiente gráfico se compara la diferencia entre el tiempo de ejecución de una inserción entre las 3 técnicas.
 Se visualiza que, para insercción, el sequential file no es eficiente a diferencias del AVL y Extendible Hashing
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/add_compare_3.png" width="300"/>
-
-
 
 #### Análisis
 
