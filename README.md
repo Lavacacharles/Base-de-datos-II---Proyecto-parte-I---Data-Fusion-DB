@@ -723,8 +723,12 @@ algoritmo.
 
 #### Gráfica de complejidades
 
-- ![#0000FF](https://via.placeholder.com/15/0000FF/000000?text=+) **Azul**: AVL File
-- ![#FFA500](https://via.placeholder.com/15/FFFF00/000000?text=+) **Amarillo**: Extendible Hashing
+| Color       | Descripción           |
+|-------------|-----------------------|
+| ![#FF0000](https://via.placeholder.com/15/FF0000/000000?text=+) Rojo    | Error                 |
+| ![#00FF00](https://via.placeholder.com/15/00FF00/000000?text=+) Verde   | Éxito                 |
+| ![#0000FF](https://via.placeholder.com/15/0000FF/000000?text=+) Azul    | Información           |
+| ![#FFFF00](https://via.placeholder.com/15/FFFF00/000000?text=+) Amarillo | Advertencia           |
  
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/build_compare_2.png" width="300"/>
 
