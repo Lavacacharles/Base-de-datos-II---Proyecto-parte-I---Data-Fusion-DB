@@ -114,7 +114,8 @@ void test_csv(string csv_file, int factor, int depth) {
   std::cout << "Time difference seconds = " << to_seconds(diff) << std::endl;
 
   begin = std::chrono::steady_clock::now();
-  hash.find(7);
+  // hash.find(8) ;
+  cout << hash.find(8) << endl;
   end = std::chrono::steady_clock::now();
   diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
              .count();
@@ -146,7 +147,7 @@ void test_csv(string csv_file, int factor, int depth) {
   std::cout << "Time difference seconds = " << to_seconds(diff) << std::endl;
 
   begin = std::chrono::steady_clock::now();
-  hash.range_search(2, 9);
+  hash.range_search(2, 9232);
   end = std::chrono::steady_clock::now();
 
   diff = std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
@@ -160,40 +161,35 @@ void test_times(int factor, int depth) {
   cout << "Factor: " << factor << endl;
   cout << "Depth: " << depth << endl;
   cout << "10 records" << endl;
-  test_csv("df_10.csv", 4, 4);
+  test_csv("datasets/df_10.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "100 records" << endl;
-  test_csv("df_100.csv", factor, depth);
+  test_csv("datasets/df_100.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "1k records" << endl;
-  test_csv("df_1k.csv", factor, depth);
+  test_csv("datasets/df_1k.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "10k records" << endl;
-  test_csv("df_10k.csv", factor, depth);
+  test_csv("datasets/df_10k.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "50k records" << endl;
-  test_csv("df_50k.csv", factor, depth);
+  test_csv("datasets/df_50k.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "100k records" << endl;
-  test_csv("df_100k.csv", factor, depth);
+  test_csv("datasets/df_100k_2.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "1m records" << endl;
-  test_csv("df_1m.csv", factor, depth);
+  test_csv("datasets/df_1m.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 }
 
-int main() {
-  // test_m();
-  // test_chain();
-  // test_times(8, 16);
-
-  // test_csv("df_10.csv", 8, 16);
+void test_general_created() {
   test_general();
   ExtendibleHashingFile hash("students");
   cout << "-----------------------------------------------------------" << endl;
@@ -207,5 +203,13 @@ int main() {
   string record_found = hash.find(18);
   cout << record_found << endl;
   cout << "-----------------------------------------------------------" << endl;
+}
+
+int main() {
+  // test_m();
+  // test_chain();
+  test_times(8, 16);
+
+  // test_csv("df_10.csv", 8, 16);
   return 0;
 }
