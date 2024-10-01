@@ -7,29 +7,40 @@ int main(){
     string csvFile = "test.csv";
     arbol.ReadCSV(csvFile, NCOLS);
     cout << "acabo de scanear el csv" << endl;
+    // PageRecord b = arbol.ReadBucket(0);
+
+    // cout << "Leer prueba " << endl;
+    // cout << b.nRegistros << endl;
+    // for(int i = 0; i < b.nRegistros; i++){
+    //     cout << endl;
+    //     b.registros[i].showData();
+    //     cout << endl;
+    // }
     cout << "leera valores" << endl;
     arbol.ReadValues();
     return 0;
 }
 int oc(){
-    string index = "index.dat";
-    string data  = "data.dat";
-    ifstream DataFile; DataFile.open(data, ios::binary);
-    Record r;
-    DataFile.seekg(15348);
-    DataFile.read((char *)&r, NCOLS*255);
+    string filename = "data.dat";
+    ifstream Page; Page.open(filename, ios::binary);
 
-    cout << "r.showData(): ";r.showData(); cout << endl;
-    DataFile.close();
-    // ifstream IndexFile; IndexFile.open(index, ios::binary);
-    // Index prueba;
-    // IndexFile.seekg(52);
-    // IndexFile.read((char *)&prueba, sizeof(Index));
-    
-    // cout << "prueba.isLeaf: " << prueba.isLeaf << endl;
-    // cout << "prueba.nRegistros: " << prueba.nRegistros << endl;
-    
+    if (!Page.is_open()) {
+        cerr << "Lee mal el registro\n";
+        exit(0);
+    }
+    Record registro;
+    int posRecord = 0;
+    Page.seekg(posRecord);
+    cout << "Leyendo un registro, posRecord: " << posRecord << endl;
+    char buff[255] = {0};
+    for(int i = 0; i < NCOLS; i++){
+        Page.read(buff, 255);
+        cout << "buff: " << buff << endl;
+        strncpy(registro.data[i], buff, 254);
+        registro.data[i][254] = '\0';
+    }
+    Page.close();
 
-    // IndexFile.close();
-    return 0;
+    return 0; 
+
 }

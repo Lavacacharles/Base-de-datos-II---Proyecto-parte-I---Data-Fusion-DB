@@ -95,32 +95,19 @@ struct BPlusTree{
     //     IndexFreeList.push_back(sizeof(Index));
     // }
     BPlusTree(){
-        bool IsPage_ = true;
-        if(IsPage_){
-            IsPage = true;
-            PageRecord Bucket;
-            // Bucket.nRegistros += 1;
-            pos_root = 0;
-            filename = "data.dat";
-            Indexfilename = "index.dat";
-            // WriteRoot(pos_root);
-            freeList.push_back(12 + 255*NCOLS*PAGE_SIZE);
-            IndexFreeList.push_back(0);
-            WriteBucket(pos_root, Bucket);
-            // AjustarFreeList();
-        }
-        else {
-            IsPage = false;
-            // pos_root = 0;
-            filename = "data.dat";
-            Indexfilename = "index.dat";
-            pos_root = 0;
-            // WriteRoot(pos_root);
-            // freeList.push_back(12 + 255*NCOLS);
-            // IndexFreeList.push_back(0);
-            // WriteBucket(pos_root, Bucket);
-            // AjustarFreeList();
-        }
+        IsPage = true;
+        PageRecord Bucket;
+        // Bucket.nRegistros += 1;
+        pos_root = 0;
+        filename = "data.dat";
+        Indexfilename = "index.dat";
+        // WriteRoot(pos_root);
+        freeList.push_back(12 + 255*NCOLS*PAGE_SIZE);
+        IndexFreeList.push_back(0);
+        WriteBucket(pos_root, Bucket);
+
+        // AjustarFreeList();
+        
     }
     BPlusTree(bool IsPage_){
         if(IsPage_){
