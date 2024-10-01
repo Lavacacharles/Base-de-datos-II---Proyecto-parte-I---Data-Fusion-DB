@@ -181,7 +181,7 @@ void test_times(int factor, int depth) {
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "100k records" << endl;
-  test_csv("datasets/df_100k_2.csv", factor, depth);
+  test_csv("datasets/df_100k.csv", factor, depth);
   cout << "-----------------------------------------------------------" << endl;
 
   cout << "1m records" << endl;
