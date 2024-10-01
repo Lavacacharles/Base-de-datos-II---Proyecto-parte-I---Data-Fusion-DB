@@ -166,7 +166,7 @@ class MiSGDB(QWidget):
                         msg.setText("Tabla ya creada")
                         msg.setInformativeText("Por favor, cree otra tabla")
                         msg.exec_()
-                elif any("SEARCH" in q for q in query) and not any("Invalid" in q for q in query):
+                elif any("SEARCH" in q for q in query) and not any("Invalid" in q for q in query) and not any(",\n" in q for q in query) :
                     if any("Key not found" in q for q in query):
                         msg = QMessageBox()
                         msg.setIcon(QMessageBox.Warning)
@@ -220,7 +220,14 @@ class MiSGDB(QWidget):
                         msg.setText("Exito")
                         msg.setInformativeText("Registro Eliminado")
                         msg.exec_()  
-                # elif (len(queri) ==0)
+                elif any("SEARCH" in q for q in query) and any(",\n" in q for q in query) and len(query) == 2:
+                        print("Removeee")
+                        msg = QMessageBox()
+                        msg.setIcon(QMessageBox.Information)
+                        msg.setWindowTitle("Eliminación??")
+                        msg.setText("Exito")
+                        msg.setInformativeText("Registro Eliminado")
+                        msg.exec_()  
 
                 # }
                 else: 
