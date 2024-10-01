@@ -1,7 +1,6 @@
 # import info
 # import prueba
 import returnCompiler 
-import hcito 
 import time
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTabWidget, QTableWidget, \
@@ -21,7 +20,7 @@ def getRecordSelectRange(record):
 class MiSGDB(QWidget):
     def __init__(self):
         super().__init__()
-        compiler = returnCompiler.SQLCompiler()
+        
         self.setWindowTitle('Mi SGDB')
 
         # Layout principal
@@ -43,7 +42,7 @@ class MiSGDB(QWidget):
         # Área de texto
         area_texto = QTextEdit()
         area_texto.setText(
-            "create table CustomerAVL from file \"../datos_small.csv\" using index avl(\"Codigo\");"
+            "create table Customer from file \"../datos_small.csv\" using index hash(\"Codigo\");"
                         )
         print(area_texto)
         #Manejo de las tablas: 
@@ -118,7 +117,17 @@ class MiSGDB(QWidget):
         self.total = 0
         def ejecutar_comando():
             texto = area_texto.toPlainText() 
+            print("el texto es: ", texto)
+            print("La queri esdfd")
+            print("La queri es")
+            start_time = time.time()
+            compiler = returnCompiler.SQLCompiler()
+            end_time = time.time()
+            self.total = (end_time - start_time) * 1000
+            self.footer_label2.setText(f"{self.total:.2f} milisec")
+            print("EL TEXTO ES: ", "$" + texto + "$")
             queris = compiler.processQuery(texto)
+            print("La queri es", queris)
             badQuery = False
             for query in queris:
                 print("La query es", query)
@@ -144,6 +153,12 @@ class MiSGDB(QWidget):
                         self.panel_lateral.addWidget(boton)
                         with open('tablas.txt', 'a') as file:
                             file.write(nombre_tabla + '\n')
+                        msg = QMessageBox()
+                        msg.setIcon(QMessageBox.Information)
+                        msg.setWindowTitle("Tabla creada correctamente")
+                        msg.setText("Exito")
+                        msg.setInformativeText(nombre_tabla + "Creada correctamente")
+                        msg.exec_()  
                     else: 
                         msg = QMessageBox()
                         msg.setIcon(QMessageBox.Warning)
@@ -160,10 +175,11 @@ class MiSGDB(QWidget):
                         msg.setInformativeText("Por favor, intente con otro key")
                         msg.exec_()
                         badQuery = True
-                        break
                     if any("RANGE" in q for q in query): #Busqueda por rango
-                        print("Entro eeees")
+                        print("Entro eeees", query )
+
                         resultado = getRecordSelectRange(query[1])
+                        
                         headers_vector = ["atr" + str(i) for i in range(len(resultado[0]))]
                         self.result_table.setColumnCount(len(headers_vector))
                         self.result_table.setHorizontalHeaderLabels(headers_vector)
@@ -191,14 +207,22 @@ class MiSGDB(QWidget):
                         msg.setInformativeText("Por favor, intente con otro key")
                         msg.exec_()
                     if any("correctamente" in q for q in query):
-                        print("correctamente")
                         msg = QMessageBox()
                         msg.setIcon(QMessageBox.Information)
-                        msg.setWindowTitle("Insertion bien ")
-                        msg.setText("Exito")
+                        msg.setWindowTitle("Inserción correcta")
+                        msg.setText("Éxito")
                         msg.setInformativeText("Registro inserttado")
                         msg.exec_()         
+                elif any("REMOVE" in q for q in query) and not any("Invalid" in q for q in query):
+                        msg = QMessageBox()
+                        msg.setIcon(QMessageBox.Information)
+                        msg.setWindowTitle("Eliminación correcta")
+                        msg.setText("Exito")
+                        msg.setInformativeText("Registro Eliminado")
+                        msg.exec_()  
+                # elif (len(queri) ==0)
 
+                # }
                 else: 
                     print("La quieru es: ",query)
                     headers_vector = ["atr"+str(i) for i in range(len(query))]
@@ -257,8 +281,6 @@ class MiSGDB(QWidget):
 
 
 if __name__ == '__main__':
-    
-    
     app = QApplication(sys.argv)
     ventana = MiSGDB()
     ventana.show()
