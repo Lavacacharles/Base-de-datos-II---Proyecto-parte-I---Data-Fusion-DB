@@ -844,7 +844,7 @@ Según la gráfica, la busqueda por rango de un Sequetial File es mucho más efi
 
 # Anexos
 Querys: https://unmarred-foxglove-2b8.notion.site/Proyecto-BD-1128af41b24480cd9ad8f5cc70dc4cc0
-https://unmarred-foxglove-2b8.notion.site/Proyecto-BD-1128af41b24480cd9ad8f5cc70dc4cc0
+PPT: https://unmarred-foxglove-2b8.notion.site/Proyecto-BD-1128af41b24480cd9ad8f5cc70dc4cc0
 Link de Anexo: https://drive.google.com/drive/folders/1fVYMfxQa9HFQ3Rud6eKnjByvQNoprSPB?usp=sharing
 - CSV
 - Video
