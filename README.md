@@ -854,4 +854,4 @@ Link de Anexo: https://drive.google.com/drive/folders/1fVYMfxQa9HFQ3Rud6eKnjByvQ
 - CSV
 - Video
 
-Nota: Según lo que el profesor dijo en clase, mencion que los metodos del B+ estan implementados en la rama `jaquino` excepto el remove,
+Nota: Según lo que el profesor dijo en clase, mencionaremos que los metodos del B+ estan implementados en la rama `jaquino` excepto el remove,
