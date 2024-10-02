@@ -1,46 +1,6 @@
 // #include "B+Tree.h"
 #include "Operaciones_basicas.h"
-Index BPlusTree::ReadIndex(int posRecord){
-    ifstream Page; Page.open(Indexfilename, ios::binary);
-    if(!Page.is_open()){
-        cerr << "Fallo abriendo archivo en la lectura del index " << posRecord;
-        exit(0);
-    }
-    Page.seekg(posRecord);
-    Index output; Page.read(reinterpret_cast<char *>(&output), sizeof(Index));
-    Page.close();
-    return output;
-}
-
-void BPlusTree:: ReadCSV(string filename_, int nelements){
-    ifstream file(filename_);
-    string line;
-
-    if (!file.is_open()) {
-        cerr << "No se pudo abrir el archivo csv INICIO\n";
-        exit(0);
-    }
-    bool start;
-    getline(file, line);
-    string *l = new string[nelements];
-    
-    while (getline(file, line)) {
-        stringstream ss(line);
-        string token;
-        Record record;
-        start = false;
-        for(int i = 0; i < nelements; i++){
-            if(i < nelements - 1) getline(ss, token, ',');
-            else getline(ss, token, '\n');
-            l[i] = token;
-        }
-        Record nuevo = Record(nelements, l);
-        cout << "line: "<< line << endl;
-        Insert(nuevo);
-
-    }
-    file.close();
-};
+#include <unordered_set>
 pair<int,Index> BPlusTree::SplitRoot(int posNode, Index node) {
     Index temp;
     Index HijoDerecho;
@@ -51,9 +11,6 @@ pair<int,Index> BPlusTree::SplitRoot(int posNode, Index node) {
     
     int medio = (ORDER + 1)/2;
     temp.posBuckets[0] = node.posBuckets[medio];
-    for(int i = 0; i < node.nRegistros; i++){
-        cout << "ReadRecord(node.posBuckets[i]).data[KEY_INDEX]: " << string(ReadRecord(node.posBuckets[i]).data[KEY_INDEX]) << endl;
-    }
     node.posBuckets[medio] = -1;
 
     
@@ -63,14 +20,16 @@ pair<int,Index> BPlusTree::SplitRoot(int posNode, Index node) {
     }
 
     for(int i = medio + 1; i < ORDER + 1;i++){
-        node.posHijos[i - (medio + 1)] = node.posHijos[i];
+        // cout << "node.posHijos[" << i << "]: " << node.posHijos[i] << endl;
+        HijoDerecho.posHijos[i - (medio + 1)] = node.posHijos[i];
         node.posHijos[i] = -1;
     }
     node.nRegistros = medio;
     HijoDerecho.nRegistros = ORDER - (medio + 1); 
-    HijoDerecho.isLeaf = node.isLeaf;
+    HijoDerecho.isLeaf = true;
 
     int posHijoDerecho = IndexFreeList[IndexFreeList.size() - 1];
+
     WriteIndex(posHijoDerecho, HijoDerecho);
     AjustarIndexFreeList();
 
@@ -79,11 +38,20 @@ pair<int,Index> BPlusTree::SplitRoot(int posNode, Index node) {
     temp.posHijos[1] = posHijoDerecho;
     WriteIndex(pos_root, temp);
 
+
+    // cout << "Despues asi son los hijos raiz temp.posHijos[j]" << endl;
+    // for(int j = 0; j < temp.nRegistros + 1; j++){
+    //     Index provIndex = ReadIndex(temp.posHijos[j]);
+
+    //     cout << string(ReadRecord(provIndex.posBuckets[0]).data[KEY_INDEX]) << " ";
+    // }
+    // cout << endl;
+
     WriteIndex(posTemp, node);
     AjustarIndexFreeList();
     
     // SplitChild(pos_root, temp, 0);
-    cout << "pos_root: " << pos_root << endl;
+    // cout << "pos_root: " << pos_root << endl;
     return {pos_root, temp};
 }
 void BPlusTree::SplitChild(int posIndex, Index node, int indexHijo) {
@@ -92,10 +60,11 @@ void BPlusTree::SplitChild(int posIndex, Index node, int indexHijo) {
     tempHalf.isLeaf = tempChild.isLeaf;
     int mid = (ORDER + 1) / 2;
     int LlaveHijoDerecho = -1;
-
+    // for(int k = 0; k < ORDER; k ++){
+    //     cout << "node.posBuckets["<< k<< "]: " << node.posBuckets[k] << ", ";
+    // }cout << endl;
 
     // int LlaveDeLaParticion = tempChild.posHijos[mid];
-    tempChild.posHijos[mid] = -1;
     for (int i = mid + 1; i < tempChild.nRegistros; i++) {
         tempHalf.posBuckets[i - (mid + 1)] = tempChild.posBuckets[i];
         tempChild.posBuckets[i] = -1; //borrar llaves del hijo izquierdo
@@ -104,19 +73,39 @@ void BPlusTree::SplitChild(int posIndex, Index node, int indexHijo) {
         tempHalf.posHijos[i - (mid + 1)] = tempChild.posHijos[i];
         tempChild.posHijos[i] = -1;
     }
+    tempChild.posHijos[mid] = -1;
     //end
     int posTempHalf = IndexFreeList[IndexFreeList.size() - 1];
     // node.posBuckets[indexHijo] = tempHalf.posBuckets[0]; 
+
     for(int i = node.nRegistros; i > indexHijo; i--){
         node.posBuckets[i] = node.posBuckets[i - 1];
     }
-    node.posBuckets[indexHijo + 1] = tempHalf.posBuckets[0];
+    node.posBuckets[indexHijo] = tempHalf.posBuckets[0];
+    // cout << "indexHijo: " << indexHijo << endl;
+
+    // for(int k = 0; k < ORDER; k ++){
+    //     cout << "node.posBuckets["<< k<< "]: " << node.posBuckets[k] << ", ";
+    // }cout << endl;
+
     for(int i = node.nRegistros + 1; i > indexHijo; i--){
         node.posHijos[i] = node.posHijos[i - 1];
     }
-    node.posHijos[indexHijo + 1] = tempHalf.posHijos[0];
+    node.posHijos[indexHijo + 1] = posTempHalf;
     tempChild.nRegistros = mid; tempHalf.nRegistros = ORDER - mid - 1;
     node.nRegistros += 1;
+
+    // for(int k = 0; k < node.nRegistros; k ++){
+    //     cout << "node.posBuckets["<< k<< "]: " << node.posBuckets[k] << ", ";
+    // }cout << endl;
+    // for(int k = 0; k < tempChild.nRegistros; k ++){
+    //     cout << "tempChild.posBuckets["<< k<< "]: " << tempChild.posBuckets[k] << ", ";
+    // }cout << endl;
+    // for(int k = 0; k < tempHalf.nRegistros; k ++){
+    //     cout << "tempHalf.posBuckets["<< k<< "]: " << tempHalf.posBuckets[k] << ", ";
+    // }cout << endl;
+    
+
     WriteIndex(posIndex, node);
     WriteIndex(node.posHijos[indexHijo], tempChild);
     WriteIndex(posTempHalf, tempHalf);
@@ -126,34 +115,54 @@ void BPlusTree::SplitChild(int posIndex, Index node, int indexHijo) {
 void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro) {
     int i = node.nRegistros - 1;
     string value = string(NuevoRegistro.data[KEY_INDEX]);
+    // for(int i = 0; i < node.nRegistros ;i++){
+    //     cout << "node.posBuckets[" << i << "]: " << node.posBuckets[i] << "| ";
+    //     string vals = string(ReadRecord(node.posBuckets[i]).data[KEY_INDEX]);
+    //     cout << "ReadRecord(node.posBuckets["<< i << "]).data[KEY_INDEX]: " << vals << endl;
+    // }
     // cout << "node.nRegistros: " << node.nRegistros << endl;
     
     if (node.isLeaf) {
-        cout << "inserta en hoja "<< endl;
+        // cout << "inserta en hoja "<< endl;
         // cout << "Chapo la lista de llaves del index" << posNode << endl;
+        // cout << "Estos son los hijos" << endl;
+        // for(int j = 0; j < node.nRegistros + 1; j++){
+        //     cout << node.posHijos[j] << " ";
+        // }
+        // cout << endl;
+        // cout << "Estas son las llaves" << endl;
+        // for(int j = 0; j < node.nRegistros; j++){
+        //     cout << node.posBuckets[j] << " ";
+        // }
+        // cout << endl;
         Record *RecordKey = ReadListRecord(node.nRegistros, node.posBuckets);
-        int IndexPosKeyRecord = 0;
 
         string LlaveEnElIndex;
         LlaveEnElIndex = string(RecordKey[i].data[KEY_INDEX]);
 
-        cout << "Estos son los hijos" << endl;
-        for(int j = 0; j < node.nRegistros + 1; j++){
-            cout << node.posHijos[j] << " ";
+        int IndexPosKeyRecord = i;
+        bool EsElNodoCorrecto = false;
+        LlaveEnElIndex = string(RecordKey[i].data[KEY_INDEX]);
+        if(DATATYPE == 1){
+            EsElNodoCorrecto = (stoi(value) < stoi(LlaveEnElIndex));
         }
-        cout << endl;
-        cout << "Estas son las llaves" << endl;
-        for(int j = 0; j < node.nRegistros; j++){
-            cout << node.posBuckets[j] << " ";
+        else{
+            EsElNodoCorrecto = (value < LlaveEnElIndex);
         }
-
-        cout << endl;
-        while (i >= 0 && value < LlaveEnElIndex) {
+        while (i >= 0 && EsElNodoCorrecto) {
+            LlaveEnElIndex = string(RecordKey[i].data[KEY_INDEX]);
+            // cout << "LlaveEnElIndex: " << LlaveEnElIndex << "| " << "value: " << value << endl;
+            if(DATATYPE == 1){
+                EsElNodoCorrecto = (stoi(value) < stoi(LlaveEnElIndex));
+            }
+            else{
+                EsElNodoCorrecto = (value < LlaveEnElIndex);
+            }
             IndexPosKeyRecord = i;
             i--;
-            LlaveEnElIndex = string(RecordKey[i].data[KEY_INDEX]);
         }
         i++;
+        
         int IndexPosBucket = i; 
         int PosKey = node.posBuckets[IndexPosKeyRecord];
         int PosBucket = node.posHijos[IndexPosBucket];
@@ -204,45 +213,59 @@ void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro)
         if(!Inserted){
             NewRecords[0] = NuevoRegistro;
         }
-        // cout << "Revisando valor en la lista de registros nuevos" << endl;
+        // cout << "NewRecords[k] Revisando valor en la lista de registros nuevos:" << endl;
         // for(int k = 0; k < Bucket.nRegistros + 1;k++){
-        //     cout << k<< "\n"; NewRecords[k].showData(); cout << endl;
+        //     NewRecords[k].showData(); cout << " ";
         // }
-
-        // cout << "lleno el nuevo valor en una pagina" << endl;
-        
+        // cout << endl;
         if(Bucket.nRegistros == PAGE_SIZE){ // dividir el bucket
             
             PageRecord NewBucket;
             int mid = (PAGE_SIZE + 1)/2;
-
+            // cout << "Nuevos NewBucket.registros[i - mid]: " << endl;
             for(int i = mid; i < PAGE_SIZE + 1; i++){
                 NewBucket.registros[i - mid] = NewRecords[i];
                 if(i < PAGE_SIZE) Bucket.registros[i] = Record();
+                // cout << string(NewBucket.registros[i - mid].data[KEY_INDEX]) << " ";
             }
+            // cout << endl;
             for(int j = 0; j < mid; j++){
                 Bucket.registros[j] = NewRecords[j];
             }
             int PosNewBucket = freeList[freeList.size() - 1];
             
             Bucket.nRegistros = mid; 
-            NewBucket.nRegistros = PAGE_SIZE - Bucket.nRegistros;
-
+            NewBucket.nRegistros = PAGE_SIZE - mid + 1;
+        
             if(Bucket.next != -1) NewBucket.next = Bucket.next;
             Bucket.next = PosNewBucket;
             NewBucket.prev = PosBucket;
 
             int PosNewKey = PosNewBucket + 12;
-
+            int PosNuevasLlaves[ORDER];
+            string Llave;
+            Llave = string(NuevoRegistro.data[KEY_INDEX]);
+            // cout << "Antes node.posBuckets[i] : " << endl;
+            // for(i = 0; i < node.nRegistros; i++){
+            //     cout << node.posBuckets[i] << " "; 
+            // }
+            // cout << endl;
             for(i = node.nRegistros; i > IndexPosKeyRecord; i--){
                 node.posBuckets[i] = node.posBuckets[i - 1];
                 node.posHijos[i + 1] = node.posHijos[i];
             }
             node.posBuckets[IndexPosKeyRecord + 1] = PosNewKey;
+            // cout << "Despues node.posBuckets[i] : " << endl;
+            // for(i = 0; i < node.nRegistros + 1; i++){
+            //     cout << node.posBuckets[i] << " "; 
+            // }
+            // cout << endl;
             node.posHijos[IndexPosBucket + 1] = PosNewBucket;
-            // WriteIndex(posNode, node);
-            // cout  << "aca?" << endl;
-            // WriteBucket(PosKey, Bucket);
+            // cout << "PosNewKey: " << PosNewKey << endl;
+            // cout << "node.nRegistros: " << node.nRegistros << endl;
+            // cout << "IndexPosKeyRecord: " << IndexPosKeyRecord << endl;
+            // cout << "node.posBuckets[IndexPosKeyRecord + 1]: " << node.posBuckets[IndexPosKeyRecord] << endl;
+            
             node.nRegistros += 1;
             // cout << "Bucket.prev: " << Bucket.prev << endl;
             // cout << "Bucket.next: " << Bucket.next << endl;
@@ -253,16 +276,6 @@ void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro)
             AjustarFreeList();
         }
         else{
-            // cout << "ajustando keys del indice" << endl;
-            // cout << "Bucket.nRegistros " << Bucket.nRegistros << endl;
-            // cout << "IndexPosKeyRecord " << IndexPosKeyRecord << endl;
-            // int j = Bucket.nRegistros;
-            // if(node.nRegistros == 0){
-            //     node.posBuckets[0] = PosKey + 12;
-            //     node.posHijos[1] = PosKey;
-            //     node.nRegistros += 1;
-            // }
-            // node.posBuckets[IndexPosKeyRecord] = PosKey + 12 + j*PosNewRecord;
             Bucket.nRegistros += 1;
 
             for(int j = 0; j < Bucket.nRegistros ; j++){
@@ -271,7 +284,7 @@ void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro)
         }
 
         // cout << "aca?"<< endl;
-        cout << "Ahora hay node.nRegistros: "<< node.nRegistros << endl;
+        // cout << "Ahora hay node.nRegistros: "<< node.nRegistros << endl;
         WriteIndex(posNode, node);
         // cout << "se escribira el bucket, miramos los registros: "<< Bucket.nRegistros << endl;
         WriteBucket(PosBucket, Bucket);
@@ -284,19 +297,9 @@ void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro)
 
     
     } else {
-        cout << "inserta indice "<< endl;
+        // cout << "inserta indice "<< endl;
         Record *keys = ReadListRecord(node.nRegistros, node.posBuckets);
         string KeyCompare = string(keys[i].data[KEY_INDEX]);
-        cout << "node.nRegistros: " <<node.nRegistros << endl;
-        for(int p = 0; p < node.nRegistros; p++){
-            cout << "node.posBuckets[i]: " << node.posBuckets[i] << " ";
-        }
-        cout << endl;
-        for (int i = 0; i < node.nRegistros; i++){
-            cout << "keys[i]: " << string(keys[i].data[KEY_INDEX]) << endl;
-        }
-        cout << "KeyCompare: "  << KeyCompare << endl;
-        cout << "keys[i].data[KEY_INDEX]: " << keys[i].data[KEY_INDEX] << endl;
         bool ConditionInsert = false;
         if(DATATYPE == 1){
             ConditionInsert = (stoi(value) < stoi(KeyCompare));
@@ -304,24 +307,43 @@ void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro)
         else{
             ConditionInsert = (value < KeyCompare);
         }
+        
         while (i >= 0 && ConditionInsert) {
-            i--;
             KeyCompare = string(keys[i].data[KEY_INDEX]);
+            // cout << "KeyCompare: " << KeyCompare << endl;
             if(DATATYPE == 1){
                 ConditionInsert = (stoi(value) < stoi(KeyCompare));
             }
             else{
                 ConditionInsert = (value < KeyCompare);
             }
+            i--;
         }
         i++;
         int posHijoIndex = node.posHijos[i];
+        // cout << "i - posHijoIndex, posHijoIndex: " << posHijoIndex << endl; 
         Index hijoIndex = ReadIndex(posHijoIndex);
+        // cout << "hijoIndex.posBuckets[i]).data[KEY_INDEX]"<<endl;
+        // for(int i = 0; i < hijoIndex.nRegistros; i++){
+        //     cout << string(ReadRecord(hijoIndex.posBuckets[i]).data[KEY_INDEX]) << " ";
+        // }
+        // cout << endl;
         if (hijoIndex.nRegistros == ORDER) {
+            // cout << "splitea: " << endl;
             SplitChild(posNode, node, i);
-
+            node = ReadIndex(posNode);
+            keys = ReadListRecord(node.nRegistros, node.posBuckets);
+            // cout << "node.nRegistros: " <<node.nRegistros << endl;
+            // for(int p = 0; p < node.nRegistros + 1; p++){
+            //     cout << "node.posHijos["<< p << "]: " << node.posHijos[p] << " ";
+            // }cout << endl;
+            // for (int i = 0; i < node.nRegistros; i++){
+            //     cout << "keys[i]: " << string(keys[i].data[KEY_INDEX]) << endl;
+            // }
             KeyCompare = string(keys[i].data[KEY_INDEX]);
+            // cout << "i: " << i << ", " << KeyCompare << endl;
             ConditionInsert = false;
+            // cout << "pas aqui: " << i << ", " << KeyCompar   e << endl;
             if(DATATYPE == 1){
                 ConditionInsert = (stoi(value) > stoi(KeyCompare));
             }
@@ -337,7 +359,7 @@ void BPlusTree::InsertNonFullNode(int posNode, Index node, Record NuevoRegistro)
 };
 
 void BPlusTree::Insert(Record NuevoRegistro) {
-    cout << "Insert: "; NuevoRegistro.showData(); cout << endl;
+    // cout << "Insert: "; NuevoRegistro.showData(); cout << endl;
     if(IsPage){
         PageRecord Bucket = ReadBucket(pos_root); 
         Record NuevosRegistros[PAGE_SIZE + 1];
@@ -393,7 +415,7 @@ void BPlusTree::Insert(Record NuevoRegistro) {
                 Bucket.registros[i] = NuevosRegistros[i];
             }
             int IndicePaginaNuevoBucket = freeList[freeList.size() - 1];
-            Bucket.nRegistros = IndiceMedio; NuevoBucket.nRegistros = PAGE_SIZE - IndiceMedio;
+            Bucket.nRegistros = IndiceMedio; NuevoBucket.nRegistros = PAGE_SIZE - IndiceMedio + 1;
             Bucket.next = IndicePaginaNuevoBucket; NuevoBucket.prev = 0;
             Raiz.posBuckets[0] = IndicePaginaNuevoBucket + 12;
             // cout << "IndicePaginaNuevoBucket: "<< IndicePaginaNuevoBucket << endl;
@@ -418,31 +440,174 @@ void BPlusTree::Insert(Record NuevoRegistro) {
 
     Index node = ReadIndex(pos_root);
     // cout << "Insertando: " << endl;
-    for(int i = 0; i < node.nRegistros ;i++){
-        cout << "node.posBuckets[" << i << "]: " << node.posBuckets[i] << "| ";
-        string vals = string(ReadRecord(node.posBuckets[i]).data[KEY_INDEX]);
-        cout << "ReadRecord(node.posBuckets["<< i << "]).data[KEY_INDEX]: " << vals << endl;
-    }
+    // for(int i = 0; i < node.nRegistros ;i++){
+    //     cout << "node.posBuckets[" << i << "]: " << node.posBuckets[i] << "| ";
+    //     string vals = string(ReadRecord(node.posBuckets[i]).data[KEY_INDEX]);
+    //     cout << "ReadRecord(node.posBuckets["<< i << "]).data[KEY_INDEX]: " << vals << endl;
+    // }
+    // for(int k = 0; k < ORDER; k ++){
+    //     cout << "node.posBuckets["<< k<< "]: " << node.posBuckets[k] << ", ";
+    // }cout << endl;
     if (ORDER == node.nRegistros) {
-        cout << "divide el root---------------------------------" << endl;
+        // cout << "divide el root---------------------------------" << endl;
         Index temp; int posTemp;
         pair<int, Index> InfoTemp = SplitRoot(pos_root, node);
         posTemp = InfoTemp.first; temp = InfoTemp.second;
-        cout << "posTemp: " << posTemp << endl;
-        cout << "temp.nRegistros: " << temp.nRegistros << endl;
-        cout << "temp.posBuckets[0]: " << temp.posBuckets[0] << endl;
-        cout << "ReadRecord(temp.posBuckets[0]): " << string(ReadRecord(temp.posBuckets[0]).data[KEY_INDEX]) << endl;
+        // cout << "posTemp: " << posTemp << endl;
+        // cout << "temp.nRegistros: " << temp.nRegistros << endl;
+        // cout << "temp.posBuckets[0]: " << temp.posBuckets[0] << endl;
+        // cout << "ReadRecord(temp.posBuckets[0]): " << string(ReadRecord(temp.posBuckets[0]).data[KEY_INDEX]) << endl;
         InsertNonFullNode(posTemp, temp, NuevoRegistro);
     } else {
         // cout << "por aca" <<endl;
         InsertNonFullNode(pos_root, node, NuevoRegistro);
     }
-    cout << "nada mas" << endl;
+    // cout << "nada mas" << endl;
 };
+int binarySearch(int arr[], int n, int target) {
+    int inicio = 0, fin = n - 1;
 
+    while (inicio <= fin) {
+        int medio = inicio + (fin - inicio) / 2; // Evitar desbordamiento
+
+        // Verificar si el valor objetivo está en el medio
+        if (arr[medio] == target)
+            return medio;
+
+        // Si el valor objetivo es menor, se ajusta el límite superior
+        if (arr[medio] > target)
+            fin = medio - 1;
+        else
+            inicio = medio + 1; // Ajustar el límite inferior
+    }
+
+    // Si el valor no está presente en el arreglo
+    return -1;
+}
+
+pair <int, Record> BPlusTree::Search(string BuscarRegistro){
+    if(IsPage){
+        PageRecord Bucket = ReadBucket(pos_root);
+        int inicio = 0, fin = Bucket.nRegistros - 1; 
+        bool EsMayor = false; bool EsIgual = false;
+
+        while (inicio <= fin) {
+            int medio = inicio + (fin - inicio) / 2;
+            if(DATATYPE == 1){
+                EsIgual = (stoi(BuscarRegistro) == stoi(Bucket.registros[medio].data[KEY_INDEX]));
+            }
+            else{
+                EsIgual = (BuscarRegistro == Bucket.registros[medio].data[KEY_INDEX]);
+            }
+            if (EsIgual)
+                return {pos_root, Bucket.registros[medio]};
+            
+            if(DATATYPE == 1){
+                EsMayor = (stoi(BuscarRegistro) < stoi(Bucket.registros[medio].data[KEY_INDEX]));
+            }
+            else{
+                EsMayor = (BuscarRegistro < Bucket.registros[medio].data[KEY_INDEX]);
+            }
+            if (EsMayor)
+                fin = medio - 1;
+            else
+                inicio = medio + 1; // Ajustar el límite inferior
+        }
+        Record vacio;
+        return {-1, vacio};
+    }
+    Index Raiz = ReadIndex(pos_root);
+    bool LlegoAHoja;
+        
+    int IndexPagina = -1;
+    while(!(Raiz.isLeaf && LlegoAHoja)){
+        if(Raiz.isLeaf){
+            LlegoAHoja = true;
+        }
+        Record *Bucket = ReadListRecord(Raiz.nRegistros, Raiz.posBuckets);
+        string Llave;
+        bool AcaBusca = false;
+        int index = 0;
+        for(int i = 0; i < Raiz.nRegistros; i++){
+            Llave = string(Bucket[i].data[KEY_INDEX]);
+            if(DATATYPE == 1){
+                AcaBusca = (stoi(Llave) > stoi(BuscarRegistro));
+            }else {
+                AcaBusca = (Llave > BuscarRegistro);
+            }
+            if(AcaBusca){
+                if(i == Raiz.nRegistros - 1) 
+                    index += 1;
+                break;
+            }
+        }
+        
+        if(!LlegoAHoja)
+            Raiz = ReadIndex(Raiz.posHijos[index]);
+        else 
+            IndexPagina = Raiz.posHijos[index];
+    }
+    PageRecord Pagina = ReadBucket(IndexPagina);
+    string Llave;
+    bool AcaEsta = false;
+    for(int i = 0; i < Pagina.nRegistros; i++){
+        Llave = string(Pagina.registros[i].data[KEY_INDEX]);
+        if(DATATYPE == 1){
+            AcaEsta = (stoi(Llave) == stoi(BuscarRegistro));
+        }else {
+            AcaEsta = (Llave == BuscarRegistro);
+        }
+        if(AcaEsta){
+            return {IndexPagina, Pagina.registros[i]};
+        }
+    }
+    // No se encontro
+    Record vacio;
+    return {-1, vacio};
+};
+vector<Record> BPlusTree::RangeSearch(string PrimerRegistro, string UltimoRegistro){
+    pair<int, Record> Inicio = Search(PrimerRegistro);
+    PageRecord Pagina = ReadBucket(Inicio.first);
+
+    string Llave; int IndicePrimerRegistro;
+    bool AcaEsta = false;
+    for(int i = 0; i < Pagina.nRegistros; i++){
+        Llave = string(Pagina.registros[i].data[KEY_INDEX]);
+        if(DATATYPE == 1){
+            AcaEsta = (stoi(Llave) == stoi(PrimerRegistro));
+        }else {
+            AcaEsta = (Llave == PrimerRegistro);
+        }
+        if(AcaEsta){
+            IndicePrimerRegistro = i;
+            break;
+        }
+    }
+
+    vector<Record> Encontrados;
+    bool SonMenores = true;
+    while(Pagina.next != 1 && SonMenores){
+        for(int i = IndicePrimerRegistro; i < Pagina.nRegistros;i ++){
+            Llave = string(Pagina.registros[i].data[KEY_INDEX]);
+            if(DATATYPE == 1){
+                SonMenores = (stoi(Llave) > stoi(UltimoRegistro));
+            }else {
+                SonMenores = (Llave > PrimerRegistro);
+            }
+            if(AcaEsta){
+                break;
+            }
+            Encontrados.push_back(Pagina.registros[i]);
+        }
+        Pagina = ReadBucket(Pagina.next);
+    }
+
+    return Encontrados;
+};
 
 void BPlusTree::ReadValues(){
     PageRecord Buffer;
+    unordered_set<int> indices;
     if(!IsPage){
         Index node = ReadIndex(pos_root);
         string value; 
@@ -456,7 +621,7 @@ void BPlusTree::ReadValues(){
             }
 
         }
-        cout << "llega a las hojas" << endl;
+        // cout << "llega a las hojas" << endl;
         int FisrtBucket = -1;
         for(int i = 0; i < node.nRegistros + 1;i++){
             if(node.posHijos[i] != -1){
@@ -470,9 +635,11 @@ void BPlusTree::ReadValues(){
         }
         cout << "FisrtBucket: " << FisrtBucket << endl;
         Buffer = ReadBucket(FisrtBucket);
+        indices.insert(FisrtBucket);
     }
     else {
         Buffer = ReadBucket(pos_root);
+        indices.insert(pos_root);
     }
     cout << "avanza entre hojas" << endl;
     vector<Record> registros;
@@ -486,22 +653,43 @@ void BPlusTree::ReadValues(){
         registros.push_back(Buffer.registros[i]);
     }
     int k = 0;
+    cout << "insert.begin()" << endl;
+    for(auto i = indices.begin(); i != indices.end(); i++){
+        cout << *i << endl;
+    }
     while(Buffer.next != -1){
-        cout << "entra-------------------------------" << endl;
+        // cout << "entra-------------------------------" << endl;
+        
         Buffer = ReadBucket(Buffer.next);
-        // Page.seekg(Buffer.next, ios::beg);
-        // Page.read((char *)&Buffer, 12 + NCOLS*255);
         cout << "Buffer.nRegistros: " << Buffer.nRegistros << endl;
         cout << "Buffer.next: " << Buffer.next << endl;
+        cout << "Buffer.prev: " << Buffer.prev << endl;
+        if(indices.find(Buffer.next) != indices.end()){
+            cout << "esta kagao\n";
+            cout << "Buffer.nregistros: "<< Buffer.nRegistros << endl;
+            cout << "Buffer.next: " << Buffer.next << endl;
+            cout << "Buffer.prev: " << Buffer.prev << endl;
+            return;
+        }
+        indices.insert(Buffer.next);
+        // Page.seekg(Buffer.next, ios::beg);
+        // Page.read((char *)&Buffer, 12 + NCOLS*255);
+
         for(int i = 0; i < Buffer.nRegistros; i++){
             registros.push_back(Buffer.registros[i]);
         }
         // k++; if(k > 10) return;
-        cout << "siguiente-------------------------------" << endl;
+        // cout << "siguiente-------------------------------" << endl;
     };
     cout << "registros.size(): " << registros.size() << endl;
     for(int i = 0; i < registros.size(); i ++){
         registros[i].showData(); cout << " ";
+        if (i > 0){
+            if(stoi(string(registros[i].data[KEY_INDEX])) != stoi(string(registros[i - 1].data[KEY_INDEX])) + 1) {
+                cout << "se kago\n";
+                break;
+            }
+        }
         // if(i == 30) break;
     }
 

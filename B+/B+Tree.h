@@ -6,12 +6,11 @@
 #include <vector>
 
 
-#define KEY_INDEX 0
-#define ORDER 5
-#define PAGE_SIZE 20
-#define NELEMENTS 4
-#define NCOLS 1
-#define DATATYPE 1
+#define KEY_INDEX 0 // indice de la llave de ordamiento
+#define ORDER 5 // cantidad maxima de hijos por nodo
+#define PAGE_SIZE 20 // cantidad maxima de registros pro pagina
+#define NCOLS 1 // cantidad de columnas del csv
+#define DATATYPE 1 // 1 la llave es numerica, 0 la llave es categorica
 
 using namespace std;
 
@@ -72,6 +71,9 @@ struct Index {
     Index(){
         nRegistros = 0;
         isLeaf = true;
+        for(int i = 0; i < ORDER; i++){
+            posBuckets[i] = -1;
+        }
         for(int i = 0; i < ORDER + 1; i++){
             posHijos[i] = -1;
         }
@@ -158,9 +160,10 @@ struct BPlusTree{
     void InsertNonFullNode(int, Index, Record);
 
     
-    void Insert(Record NuevoRegistro);
-    void Search(){}
+    void Insert(Record);
+    pair <int, Record> Search(string); // El string lo manejamos como cadena o numero segun el tipo de dato de la llave de ordamiento
+    vector<Record> RangeSearch(string, string);
     void Eliminate(){}
     void ReadCSV(string filename, int nelements);
-    void ReadValues();
+    void ReadValues(); // In order
 };

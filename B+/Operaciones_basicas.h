@@ -1,5 +1,45 @@
 #include "B+Tree.h"
+Index BPlusTree::ReadIndex(int posRecord){
+    ifstream Page; Page.open(Indexfilename, ios::binary);
+    if(!Page.is_open()){
+        cerr << "Fallo abriendo archivo en la lectura del index " << posRecord;
+        exit(0);
+    }
+    Page.seekg(posRecord);
+    Index output; Page.read(reinterpret_cast<char *>(&output), sizeof(Index));
+    Page.close();
+    return output;
+}
 
+void BPlusTree:: ReadCSV(string filename_, int nelements){
+    ifstream file(filename_);
+    string line;
+
+    if (!file.is_open()) {
+        cerr << "No se pudo abrir el archivo csv INICIO\n";
+        exit(0);
+    }
+    bool start;
+    getline(file, line);
+    string *l = new string[nelements];
+    
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string token;
+        Record record;
+        start = false;
+        for(int i = 0; i < nelements; i++){
+            if(i < nelements - 1) getline(ss, token, ',');
+            else getline(ss, token, '\n');
+            l[i] = token;
+        }
+        Record nuevo = Record(nelements, l);
+        // cout << "line: "<< line << endl;
+        Insert(nuevo);
+
+    }
+    file.close();
+};
 void BPlusTree::WriteRoot(int posRoot){
     fstream Page; Page.open(Indexfilename, ios::in | ios::out | ios::binary);
     if(!Page.is_open()){
