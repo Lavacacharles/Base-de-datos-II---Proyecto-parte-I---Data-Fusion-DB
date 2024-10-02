@@ -145,14 +145,13 @@ Búsqueda en BST
 
 ### Evolución de tiempos de ejecución
 
-| seg         | N=10  | N=100 | N=1K   | N=10K   | N=100K   | N=1M   |
-| ----------- | ----- | ----- | ------ | ------- | -------- | -------|
-| buildTable  | 0.008 | 0.038 | 0.513  | 7.077   | 91.351   | 1096.21|
-| add         | 0.002 | 0.002 | 0.013  | 0.013   | 0.023    | 0.024  |
-| remove      | 0.01  | 0.01  | 0.011  | 0.02    | 0.021    | 0.024  |
-| search      | 0.0001| 0.0004| 0.006  | 0.009   | 0.012    | 0.010  |
-| rangeSearch | 0.001 | 0.001 | 0.007  | 0.198   | 0.219    | 7.471  |
-
+| seg         | N=10   | N=100  | N=1K  | N=10K | N=100K | N=1M    |
+| ----------- | ------ | ------ | ----- | ----- | ------ | ------- |
+| buildTable  | 0.008  | 0.038  | 0.513 | 7.077 | 91.351 | 1096.21 |
+| add         | 0.002  | 0.002  | 0.013 | 0.013 | 0.023  | 0.024   |
+| remove      | 0.01   | 0.01   | 0.011 | 0.02  | 0.021  | 0.024   |
+| search      | 0.0001 | 0.0004 | 0.006 | 0.009 | 0.012  | 0.010   |
+| rangeSearch | 0.001  | 0.001  | 0.007 | 0.198 | 0.219  | 7.471   |
 
 ## Sequential File
 
@@ -285,7 +284,7 @@ Búsqueda del registro más cercano:
 | insert      | 0.181 | 2.035 | 17.084 | 235.253 | 4858.953 | ---         |
 | remove      | 0.007 | 0.020 | 0.042  | 0.361   | 4.639    | ---         |
 | search      | 0.001 | 0.001 | 0.001  | 0.007   | 0.001    | ---         |
-| rangeSearch | 0.268 | 4.100 | 35.030 | 436.299 | 447     | ---         |
+| rangeSearch | 0.268 | 4.100 | 35.030 | 436.299 | 447      | ---         |
 
 ## Extendible Hashing Indexing
 
@@ -438,13 +437,13 @@ Debido a que este range search es solo un find iterando sobre un rango, no se va
 
 Los siguientes tiempos están en segundos. Se tiene un factor de 8 y una profundidad global de 16
 
-| seg        | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M |
-| ---------- | ----- | ----- | ----- | ----- | ------ | -----|
-| buildTable | 0.014 | 0.388 | 0.783 | 1.539 | 3.833  | 24.11|
-| add        | 0.001 | 0.002 | 0.007 | 0.008 | 0.009  | 0.009|
-| remove     | 0.006 | 0.004 | 0.006 | 0.006 | 0.007  | 0.006|
-| search     | 0.001 | 0.001 | 0.001 | 0.006 | 0.006  | 0.007|
-| rangeSearch| 0.001 | 0.003 | 0.003 | 0.008 | 0.012  | 0.016|
+| seg         | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M  |
+| ----------- | ----- | ----- | ----- | ----- | ------ | ----- |
+| buildTable  | 0.014 | 0.388 | 0.783 | 1.539 | 3.833  | 24.11 |
+| add         | 0.001 | 0.002 | 0.007 | 0.008 | 0.009  | 0.009 |
+| remove      | 0.006 | 0.004 | 0.006 | 0.006 | 0.007  | 0.006 |
+| search      | 0.001 | 0.001 | 0.001 | 0.006 | 0.006  | 0.007 |
+| rangeSearch | 0.001 | 0.003 | 0.003 | 0.008 | 0.012  | 0.016 |
 
 # Compilador
 
@@ -559,32 +558,36 @@ Esta interfaz de usuario (UI) ha sido desarrollada en Python utilizando PyQt5 pa
 ## Guía
 
 ### Requisitos Previos
+
 1. **Instalar WSL2 en Windows**:
+
    - Instalar wsl en Windows para poder usar ubuntu, o usar Linux de frente
    - Puede seguir el siguiente enlace: https://www.youtube.com/watch?v=L4f1XHrSJEg&t=93s
 
 2. **Instalar Herramientas de Compilación para C++ y Python**:
    - Asegúrate de instalar un compilador de C++ y Python en tu entorno WSL:
-    ```bash
-     sudo apt install g++
-     sudo apt install python3
-    sudo apt install python3-dev
-    sudo apt install cmake
-     ```
+   ```bash
+    sudo apt install g++
+    sudo apt install python3
+   sudo apt install python3-dev
+   sudo apt install cmake
+   ```
    - También es recomendable instalar VsCode:
      ```bash
      code .
      ```
 
-
 ### Pasos de Configuración
+
 1. **Clonar el repositorio de pybind11**:
-   - Dentro del directorio de tu proyecto, clona el repositorio de Pybind11 puedes seguir el siguiente tutorial:  https://www.youtube.com/watch?v=_5T70cAXDJ0
+
+   - Dentro del directorio de tu proyecto, clona el repositorio de Pybind11 puedes seguir el siguiente tutorial: https://www.youtube.com/watch?v=_5T70cAXDJ0
      ```bash
      git clone https://github.com/pybind/pybind11.git
      ```
 
 2. **Crear y entrar en el directorio `build`**:
+
    - Ejecuta los siguientes comandos para crear el directorio `build` y entrar en él:
      ```bash
      mkdir build
@@ -592,10 +595,11 @@ Esta interfaz de usuario (UI) ha sido desarrollada en Python utilizando PyQt5 pa
      ```
 
 3. **Configurar el entorno de compilación**:
-   - Sal de tu directorio Build  asegura de tener el CMakeList.txt:
+
+   - Sal de tu directorio Build asegura de tener el CMakeList.txt:
      ![imagen](https://github.com/user-attachments/assets/c22b88e3-39c8-4476-82c8-5c847605655e)
-   - En ese mismo directorio ten todos lo archivos tales como el hash.h y otros: 
-![imagen](https://github.com/user-attachments/assets/361ba71b-5da6-4252-b4c2-85c51789a5d7)
+   - En ese mismo directorio ten todos lo archivos tales como el hash.h y otros:
+     ![imagen](https://github.com/user-attachments/assets/361ba71b-5da6-4252-b4c2-85c51789a5d7)
 
    - Dentro de la carpeta `build`, ejecuta:
      ```bash
@@ -603,20 +607,22 @@ Esta interfaz de usuario (UI) ha sido desarrollada en Python utilizando PyQt5 pa
      make
      ```
    - Dentro de build deberás de correr el archivo test4.py y ya estará listo
-     
 
 ### Problemas Frecuentes
+
 Si experimentas problemas con la instalación de la librería PyQt5 para la interfaz en Python, prueba con los siguientes comandos:
 
 1. **Actualizar el sistema**:
+
    ```bash
    sudo apt-get update
    sudo apt-get install build-essential libgl1-mesa-dev libglu1-mesa-dev
    sudo apt-get install libxcb-xinerama0 libxcb-shm0 libxcb-randr0 libxcb-xkb1 libxcb-icccm4 libxcb-sync1 libxcb-shape0 libxkbcommon-x11-0
-pip install pyqt5
-sudo apt-get install libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0
+   pip install pyqt5
+   sudo apt-get install libxcb-shape0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0
 
    ```
+
 ## Componentes Principales
 
 ### Clase `MiSGDB`
@@ -717,44 +723,45 @@ algoritmo.
 
 #### Tiempos de ejecución
 
-| buildFromFile      | N=10  | N=100 | N=1K   | N=10K   | N=100K   | N=1M(aprox) |
-| ------------------ | ----- | ----- | ------ | ------- | -------- | ----------- |
-| AVLFile            | 0.383 | 7.989 | 122.22 | 1556.27 | 17735.63 | 201655.4    |
-| Sequential File    |       |       |        |         |          |             |
-| Extendible Hashing | 0.001 | 0.389 | 0.776  | 1.438   | 3.456    | 20.910      |
+| buildFromFile      | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
+| ------------------ | ----- | ----- | ----- | ----- | ------ | ----------- |
+| AVLFile            | 0.008 | 0.038 | 0.513 | 7.077 | 91.351 | 1096.21     |
+| Sequential File    |       |       |       |       |        |             |
+| Extendible Hashing | 0.014 | 0.388 | 0.783 | 1.539 | 3.833  | 24.11       |
 
 #### Análisis de gráfica de complejidades
+
 Como podemos notar, el tiempo de crecimiento de ambas estructuras es logarítmico, sin embargo, el crecimiento es más lento para el hash debido a que en esté va a iterar menos respecto al volumen de datos y realiza menos accesos a la memoría secundaria.
 
 - El hash va a llegar al bucket indicado por el índice y si es de que el bucket tiene espacio, solo se va a insertar allí mismo, pero cuando se aumenta el volumen incrementa la probabilidad de encadenar los buckets. Por cada bucket de la cadena, se incrementa el tiempo, pero esto es respecto al factor, lo cual mitiga el efecto del volumen. Asimismo, se debe mencionar que por cada lectura de bucket se accede el archivo, lo cual puede demorar. Por otro lado, lo que también va a pasar normalmente es que se va a crecer dinámicamente realizando particiones, en lo que se va a sobrescribir los punteros del archivo índice.
 
-- El AVL va a viajar por el árbol, así que cuando incremente el volumen de los datos, va a realizar un viaje más largo. Como cada nodo es obtenido leyendo del archivo, el acceso a memoria secundaria aumenta considerablemente respecto a la cantidad de datos. Así mismo, si hay rotaciones se escribe en el archivo varias veces, lo cual demora más y se hace más propenso cuando el volumen de datos incrementa. El tiempo es considerablemente mayor cuando el archivo de datos para generar la tabla está desordenado. Se recomienda primero  ordenar el archivo para luego generar el AVLFile.
-  
- 
+- El AVL va a viajar por el árbol, así que cuando incremente el volumen de los datos, va a realizar un viaje más largo. Como cada nodo es obtenido leyendo del archivo, el acceso a memoria secundaria aumenta considerablemente respecto a la cantidad de datos. Así mismo, si hay rotaciones se escribe en el archivo varias veces, lo cual demora más y se hace más propenso cuando el volumen de datos incrementa. El tiempo es considerablemente mayor cuando el archivo de datos para generar la tabla está desordenado. Se recomienda primero ordenar el archivo para luego generar el AVLFile.
+
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/build_compare_2.png" width="300"/>
 
-🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
+🟠 Extendible Hashing 🟢 Sequential File 🔵 AVL File
 
 ### Insertar registro
 
 #### Tiempos de ejecución
 
-| add                | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M  |
-| ------------------ | ----- | ----- | ----- | ----- | ------ | ----- |
-| AVLFile            | 0.023 | 0.083 | 0.196 | 0.204 | 0.25   | 0.31  |
-| Sequential File    | 0.181 | 2.035 | 17.08 | 235.25 | 2796.80 | --- |
-| Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000 |
+| add                | N=10  | N=100 | N=1K  | N=10K  | N=100K  | N=1M  |
+| ------------------ | ----- | ----- | ----- | ------ | ------- | ----- |
+| AVLFile            | 0.002 | 0.002 | 0.013 | 0.011  | 0.023   | 0.024 |
+| Sequential File    | 0.181 | 2.035 | 17.08 | 235.25 | 2796.80 | ---   |
+| Extendible Hashing | 0.001 | 0.002 | 0.007 | 0.008  | 0.009   | 0.009 |
 
 #### Análisis de gráfica de complejidades
 
 #### Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)
+
 En el siguiente gráfico se puede observar la diferencia entre el tiempo de ejecución de una insercción con la técnica AVLFile e indexacción de tipo hash.
 Asimismo, se visualiza la complejidad O(1) para la inserción con hash, mientras que al usar el AVL se va formando una funcion logaritmica.
 Aunque hablamos de microsegundos, la diferencia se hace visible cuando la cantidad de datos aumenta.
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data (AVLFile vs Extendible Hashing)" height="200" src="images/add_compare_2.png" width="300"/>
 
-🟠 Extendible Hashing   🔵 AVL File
+🟠 Extendible Hashing 🔵 AVL File
 
 #### Gráfico de evolución de tiempo ejecución vs. data (3 técnicas)
 
@@ -763,7 +770,7 @@ Se visualiza que, para insercción, el sequential file no es eficiente a diferen
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/add_compare_3.png" width="300"/>
 
-🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
+🟠 Extendible Hashing 🟢 Sequential File 🔵 AVL File
 
 ### Eliminar registro
 
@@ -771,9 +778,9 @@ Se visualiza que, para insercción, el sequential file no es eficiente a diferen
 
 | remove             | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
 | ------------------ | ----- | ----- | ----- | ----- | ------ | ----------- |
-| AVLFile            | 0.001 | 0.001 | 0.002 | 0.002 | 0.002  | 0.002       |
+| AVLFile            | 0.001 | 0.001 | 0.011 | 0.020 | 0.021  | 0.02        |
 | Sequential File    | 0.007 | 0.020 | 0.042 | 0.361 | 4.056  | ---         |
-| Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.000  | 0.000       |
+| Extendible Hashing | 0.006 | 0.004 | 0.006 | 0.006 | 0.007  | 0.006       |
 
 #### Análisis de gráfica de complejidades
 
@@ -785,26 +792,25 @@ Se visualiza que, para insercción, el sequential file no es eficiente a diferen
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/remove_compare_2.png" width="300"/>
 
-🟠 Extendible Hashing   🔵 AVL File
+🟠 Extendible Hashing 🔵 AVL File
 
 #### Gráfico de evolución de tiempo ejecución vs. data (3 técnicas)
 
-En el gráfico, se visualiza la diferencia entre los tiempo de ejecución del sequential file con respecto a las otras dos técnicas implementadas. 
+En el gráfico, se visualiza la diferencia entre los tiempo de ejecución del sequential file con respecto a las otras dos técnicas implementadas.
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/remove_compare_3.png" width="300"/>
 
-🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
-
+🟠 Extendible Hashing 🟢 Sequential File 🔵 AVL File
 
 ### Búsqueda de registro
 
 #### Tiempos de ejecución
 
-| search             | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
-| ------------------ | ----- | ----- | ----- | ----- | ------ | ----------- |
-| AVLFile            | 0.001 | 0.011 | 0.097 | 1.011 | 7.28   | 19.03       |
-| Sequential File    | 0.001 | 0.001 | 0.001  | 0.007 | 0.098 | ---         |
-| Extendible Hashing | 0.000 | 0.000 | 0.000 | 0.000 | 0.003  | 0.051       |
+| search             | N=10   | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox) |
+| ------------------ | ------ | ----- | ----- | ----- | ------ | ----------- |
+| AVLFile            | 0.0001 | 0.001 | 0.006 | 0.009 | 0.012  | 0.01        |
+| Sequential File    | 0.001  | 0.001 | 0.001 | 0.007 | 0.098  | ---         |
+| Extendible Hashing | 0.001  | 0.000 | 0.001 | 0.006 | 0.006  | 0.007       |
 
 #### Análisis de gráfica de complejidades
 
@@ -815,24 +821,24 @@ El AVL alcanza una aparente complejidad lineal con un salto entre la busqueda co
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/search_compare_2.png" width="300"/>
 
-🟠 Extendible Hashing   🔵 AVL File
+🟠 Extendible Hashing 🔵 AVL File
 
 #### Gráfico de evolución de tiempo ejecución vs. data (3 técnicas)
 
-En el gráfico, se visualiza la diferencia entre los tiempo de ejecución del sequential file con respecto a las otras dos técnicas implementadas. 
+En el gráfico, se visualiza la diferencia entre los tiempo de ejecución del sequential file con respecto a las otras dos técnicas implementadas.
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/search_compare_3.png" width="300"/>
 
-🟠 Extendible Hashing    🟢 Sequential File    🔵 AVL File
+🟠 Extendible Hashing 🟢 Sequential File 🔵 AVL File
 
 ### Búsqueda por rango
 
 #### Tiempos de ejecución
 
-| rangeSearch     | N=10  | N=100 | N=1K  | N=10K | N=100K | N=1M(aprox |
-| --------------- | ----- | ----- | ----- | ----- | ------ | ---------- |
-| AVLFile         | 0.013 | 0.087 | 0.138 | 0.154 | 0.22   | 0.27       |
-| Sequential File | 0.268 | 4.100 | 35.030 | 436.299 | --- | ---        |
+| rangeSearch     | N=10  | N=100 | N=1K   | N=10K   | N=100K | N=1M(aprox |
+| --------------- | ----- | ----- | ------ | ------- | ------ | ---------- |
+| AVLFile         | 0.001 | 0.001 | 0.007  | 0.198   | 0.219  | 7.471      |
+| Sequential File | 0.268 | 4.100 | 35.030 | 436.299 | ---    | ---        |
 
 #### Gráfica de complejidades
 
@@ -842,7 +848,7 @@ Según la gráfica, la busqueda por rango de un Sequetial File es mucho más efi
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/range_compare_3.png" width="300"/>
 
-🟢 Sequential File   🔵 AVL File
+🟢 Sequential File 🔵 AVL File
 
 # Anexos
 
@@ -851,6 +857,7 @@ Querys: https://unmarred-foxglove-2b8.notion.site/Proyecto-BD-1128af41b24480cd9a
 PPT: https://unmarred-foxglove-2b8.notion.site/Proyecto-BD-1128af41b24480cd9ad8f5cc70dc4cc0
 
 Link de Anexo: https://drive.google.com/drive/folders/1fVYMfxQa9HFQ3Rud6eKnjByvQNoprSPB?usp=sharing
+
 - CSV
 - Video
 
