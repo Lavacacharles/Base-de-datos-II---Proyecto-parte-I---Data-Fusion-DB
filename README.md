@@ -853,3 +853,5 @@ PPT: https://unmarred-foxglove-2b8.notion.site/Proyecto-BD-1128af41b24480cd9ad8f
 Link de Anexo: https://drive.google.com/drive/folders/1fVYMfxQa9HFQ3Rud6eKnjByvQNoprSPB?usp=sharing
 - CSV
 - Video
+
+Nota: Según lo que el profesor dijo en clase, mencion que los metodos del B+ estan implementados en la rama `jaquino` excepto el remove,
