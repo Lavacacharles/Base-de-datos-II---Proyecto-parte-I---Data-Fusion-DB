@@ -737,7 +737,7 @@ Como podemos notar, el tiempo de crecimiento de ambas estructuras es logarítmic
 
 - El AVL va a viajar por el árbol, así que cuando incremente el volumen de los datos, va a realizar un viaje más largo. Como cada nodo es obtenido leyendo del archivo, el acceso a memoria secundaria aumenta considerablemente respecto a la cantidad de datos. Así mismo, si hay rotaciones se escribe en el archivo varias veces, lo cual demora más y se hace más propenso cuando el volumen de datos incrementa. El tiempo es considerablemente mayor cuando el archivo de datos para generar la tabla está desordenado. Se recomienda primero ordenar el archivo para luego generar el AVLFile.
 
-<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/build_compare_2.png" width="300"/>
+<img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/build_compare_2.png" width="300"/> 
 
 🟠 Extendible Hashing 🟢 Sequential File 🔵 AVL File
 
