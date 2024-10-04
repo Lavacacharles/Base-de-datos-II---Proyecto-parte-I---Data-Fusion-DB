@@ -848,7 +848,7 @@ Según la gráfica, la busqueda por rango de un Sequetial File es mucho más efi
 
 <img alt="Gráfico de evolución de tiempo ejecución vs. data" height="200" src="images/range_compare_3.png" width="300"/>
 
-🟢 Sequential File 🔵 AVL File
+🟢 Sequential File 🔵 AVL File 🟠 Extendible Hashing
 
 # Anexos
 
